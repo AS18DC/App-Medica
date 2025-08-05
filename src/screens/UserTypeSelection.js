@@ -1,0 +1,201 @@
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  SafeAreaView,
+  Image,
+  ScrollView,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { isWeb, isMobileScreen, isTabletScreen, isDesktopScreen, webStyles, getResponsiveSpacing, getResponsiveFontSize, getResponsivePadding } from '../utils/responsive';
+
+const UserTypeSelection = ({ navigation }) => {
+  const handleUserTypeSelection = (userType) => {
+    switch (userType) {
+      case 'patient':
+        navigation.navigate('PatientNavigator');
+        break;
+      case 'doctor':
+        navigation.navigate('DoctorNavigator');
+        break;
+      case 'clinic':
+        navigation.navigate('ClinicNavigator');
+        break;
+    }
+  };
+
+  const userTypes = [
+    {
+      id: 'patient',
+      title: 'Paciente',
+      description: 'Busca doctores y agenda citas',
+      icon: 'person',
+      color: '#007AFF',
+      gradient: ['#007AFF', '#0056CC'],
+    },
+    {
+      id: 'doctor',
+      title: 'Doctor',
+      description: 'Gestiona citas y pacientes',
+      icon: 'medical',
+      color: '#34C759',
+      gradient: ['#34C759', '#28A745'],
+    },
+    {
+      id: 'clinic',
+      title: 'Clínica',
+      description: 'Administra doctores y servicios',
+      icon: 'business',
+      color: '#FF9500',
+      gradient: ['#FF9500', '#E67E00'],
+    },
+  ];
+
+  const renderUserTypeCard = (userType) => (
+    <TouchableOpacity
+      key={userType.id}
+      style={[
+        styles.option,
+        isWeb && styles.webOption,
+        isWeb && webStyles.card,
+        isWeb && webStyles.button,
+      ]}
+      onPress={() => handleUserTypeSelection(userType.id)}
+    >
+      <View style={[styles.iconContainer, { backgroundColor: userType.color + '20' }]}>
+        <Ionicons name={userType.icon} size={getResponsiveFontSize(40, 48, 56)} color={userType.color} />
+      </View>
+      <Text style={[styles.optionTitle, { fontSize: getResponsiveFontSize(20, 22, 24) }]}>
+        {userType.title}
+      </Text>
+      <Text style={[styles.optionDescription, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
+        {userType.description}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={[styles.content, isWeb && webStyles.container]}>
+          <View style={styles.header}>
+            <Text style={[styles.title, { fontSize: getResponsiveFontSize(32, 36, 40) }]}>
+              Medic App
+            </Text>
+            <Text style={[styles.subtitle, { fontSize: getResponsiveFontSize(16, 17, 18) }]}>
+              ¿Cómo quieres usar la aplicación?
+            </Text>
+          </View>
+
+          <View style={[
+            styles.optionsContainer,
+            isWeb && styles.webOptionsContainer,
+            { 
+              paddingHorizontal: getResponsivePadding(20, 40, 60),
+              gap: getResponsiveSpacing(16, 24, 32)
+            }
+          ]}>
+            {isWeb ? (
+              <View style={styles.webGrid}>
+                {userTypes.map(renderUserTypeCard)}
+              </View>
+            ) : (
+              userTypes.map(renderUserTypeCard)
+            )}
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  header: {
+    alignItems: 'center',
+    paddingTop: getResponsiveSpacing(60, 80, 100),
+    paddingBottom: getResponsiveSpacing(40, 50, 60),
+  },
+  title: {
+    fontWeight: 'bold',
+    color: '#1A1A1A',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  subtitle: {
+    color: '#666',
+    textAlign: 'center',
+    maxWidth: 300,
+  },
+  optionsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  webOptionsContainer: {
+    justifyContent: 'flex-start',
+  },
+  webGrid: {
+    display: 'flex',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 24,
+    justifyContent: 'center',
+  },
+  option: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: getResponsivePadding(24, 32, 40),
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    alignItems: 'center',
+    minHeight: 200,
+    justifyContent: 'center',
+  },
+  webOption: {
+    flex: isWeb ? '0 1 300px' : undefined,
+    maxWidth: isWeb ? 350 : undefined,
+    minHeight: isWeb ? 250 : 200,
+    transition: 'all 0.3s ease',
+    border: '1px solid #E0E0E0',
+  },
+  iconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: getResponsiveSpacing(80, 96, 112),
+    height: getResponsiveSpacing(80, 96, 112),
+    borderRadius: getResponsiveSpacing(40, 48, 56),
+    marginBottom: getResponsiveSpacing(16, 20, 24),
+  },
+  optionTitle: {
+    fontWeight: '600',
+    color: '#1A1A1A',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  optionDescription: {
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+});
+
+export default UserTypeSelection; 

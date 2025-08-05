@@ -1,0 +1,264 @@
+/* Web-specific global styles for Medic App */
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for web */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Web-specific hover effects */
+.web-hover:hover {
+  transform: translateY(-2px);
+  transition: all 0.3s ease;
+}
+
+/* Card hover effects */
+.card-hover:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+  transform: translateY(-2px);
+  transition: all 0.3s ease;
+}
+
+/* Button hover effects */
+.button-hover:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+
+/* Focus states for accessibility */
+button:focus,
+input:focus,
+textarea:focus {
+  outline: 2px solid #007AFF;
+  outline-offset: 2px;
+}
+
+/* Web-specific animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Responsive typography */
+@media (min-width: 768px) {
+  .web-text-large {
+    font-size: 1.125rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .web-text-large {
+    font-size: 1.25rem;
+  }
+}
+
+/* Web-specific spacing */
+@media (min-width: 768px) {
+  .web-padding-large {
+    padding: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .web-padding-large {
+    padding: 3rem;
+  }
+}
+
+/* Web-specific grid layouts */
+.web-grid-responsive {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+@media (min-width: 768px) {
+  .web-grid-responsive {
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .web-grid-responsive {
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  }
+}
+
+/* Web-specific container max-widths */
+.web-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+@media (min-width: 768px) {
+  .web-container {
+    padding: 0 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .web-container {
+    padding: 0 3rem;
+  }
+}
+
+/* Web-specific form styles */
+.web-input {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 16px;
+  transition: border-color 0.2s ease;
+}
+
+.web-input:focus {
+  border-color: #007AFF;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+/* Web-specific button styles */
+.web-button {
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  font-size: 16px;
+}
+
+.web-button-primary {
+  background-color: #007AFF;
+  color: white;
+}
+
+.web-button-primary:hover {
+  background-color: #0056CC;
+  transform: translateY(-1px);
+}
+
+.web-button-secondary {
+  background-color: #f8f9fa;
+  color: #1a1a1a;
+  border: 1px solid #e0e0e0;
+}
+
+.web-button-secondary:hover {
+  background-color: #e9ecef;
+  transform: translateY(-1px);
+}
+
+/* Web-specific card styles */
+.web-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  border: 1px solid #f0f0f0;
+}
+
+.web-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Web-specific loading states */
+.web-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Web-specific responsive images */
+.web-image-responsive {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+/* Web-specific navigation styles */
+.web-nav {
+  background: white;
+  border-bottom: 1px solid #e0e0e0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+/* Web-specific footer styles */
+.web-footer {
+  background: #f8f9fa;
+  border-top: 1px solid #e0e0e0;
+  padding: 2rem 0;
+  margin-top: auto;
+}
+
+/* Web-specific utility classes */
+.web-text-center {
+  text-align: center;
+}
+
+.web-text-left {
+  text-align: left;
+}
+
+.web-text-right {
+  text-align: right;
+}
+
+.web-hidden {
+  display: none;
+}
+
+.web-visible {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .web-hidden-md {
+    display: none;
+  }
+  
+  .web-visible-md {
+    display: block;
+  }
+}
+
+@media (min-width: 1024px) {
+  .web-hidden-lg {
+    display: none;
+  }
+  
+  .web-visible-lg {
+    display: block;
+  }
+} 
