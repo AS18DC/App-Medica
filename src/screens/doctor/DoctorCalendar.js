@@ -6,14 +6,16 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { isWeb, webStyles, getResponsiveSpacing, getResponsiveFontSize, getResponsivePadding } from '../../utils/responsive';
+import { useDoctor } from '../../context/DoctorContext';
 
 const DoctorCalendar = ({ navigation }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [availability, setAvailability] = useState({});
+  
+  // Use shared context
+  const { availability, appointments, updateAvailability } = useDoctor();
 
   // Generate calendar data for current month
   const generateCalendarData = (date) => {
@@ -49,13 +51,41 @@ const DoctorCalendar = ({ navigation }) => {
       const isPast = currentDate < new Date(today.getFullYear(), today.getMonth(), today.getDate());
       const isWeekend = currentDate.getDay() === 0 || currentDate.getDay() === 6; // Sunday or Saturday
       
+      const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`;
+      const dayAppointments = appointments[dateKey] || [];
+      const dayAvailability = availability[dateKey] || [];
+      
+      // Determine day status based on new requirements
+      let dayStatus = 'normal';
+      if (isPast) {
+        dayStatus = 'past';
+      } else {
+        // For both weekdays and weekends
+        if (dayAvailability.length === 0) {
+          // No hours available
+          if (dayAppointments.length === 0) {
+            dayStatus = 'unavailable'; // No hours available, no patients
+          } else {
+            dayStatus = 'full'; // No hours available, but has patients
+          }
+        } else {
+          // Has hours available
+          if (dayAppointments.length === 0) {
+            dayStatus = 'available'; // Has hours available, no patients
+          } else {
+            dayStatus = 'with-patients'; // Has hours available and has patients
+          }
+        }
+      }
+      
       currentWeek.push({
         day: j,
         date: currentDate,
         isPast,
         isWeekend,
-        isAvailable: !isPast && !isWeekend, // Available by default for weekdays in future
-        hasAppointments: !isPast && !isWeekend && Math.random() > 0.8, // Only future weekdays can have appointments
+        dayStatus,
+        appointments: dayAppointments,
+        availability: dayAvailability,
       });
 
       if (currentWeek.length === 7) {
@@ -79,7 +109,7 @@ const DoctorCalendar = ({ navigation }) => {
 
   useEffect(() => {
     setCalendarData(generateCalendarData(currentMonth));
-  }, [currentMonth]);
+  }, [currentMonth, availability, appointments]);
 
   const handlePreviousMonth = () => {
     const newMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
@@ -94,12 +124,44 @@ const DoctorCalendar = ({ navigation }) => {
   const handleDatePress = (day) => {
     if (!day || day.isPast) return;
 
-    const dateKey = `${day.date.getFullYear()}-${day.date.getMonth()}-${day.date.getDate()}`;
-    
-    // Always navigate to day view, regardless of appointments
-    navigation.navigate('DoctorDayView', { 
-      date: day.date
-    });
+    // Navigate directly to day view
+    navigation.navigate('DoctorDayView', { date: day.date });
+  };
+
+
+
+  const getDayStyle = (day) => {
+    switch (day.dayStatus) {
+      case 'past':
+        return [styles.dayCell, styles.pastDay];
+      case 'available':
+        return [styles.dayCell, styles.availableDay];
+      case 'with-patients':
+        return [styles.dayCell, styles.withPatientsDay];
+      case 'full':
+        return [styles.dayCell, styles.fullDay];
+      case 'unavailable':
+        return [styles.dayCell, styles.unavailableDay];
+      default:
+        return [styles.dayCell];
+    }
+  };
+
+  const getDayTextStyle = (day) => {
+    switch (day.dayStatus) {
+      case 'past':
+        return [styles.dayText, styles.pastDayText];
+      case 'available':
+        return [styles.dayText, styles.availableDayText];
+      case 'with-patients':
+        return [styles.dayText, styles.withPatientsDayText];
+      case 'full':
+        return [styles.dayText, styles.fullDayText];
+      case 'unavailable':
+        return [styles.dayText, styles.unavailableDayText];
+      default:
+        return [styles.dayText];
+    }
   };
 
   const renderCalendar = () => (
@@ -145,37 +207,22 @@ const DoctorCalendar = ({ navigation }) => {
                 return <View key={dayIndex} style={styles.emptyDay} />;
               }
 
-              const dateKey = `${day.date.getFullYear()}-${day.date.getMonth()}-${day.date.getDate()}`;
-              const isAvailable = availability[dateKey] !== undefined ? availability[dateKey] : day.isAvailable;
-
               return (
                 <TouchableOpacity
                   key={dayIndex}
-                  style={[
-                    styles.dayCell,
-                    day.isPast && styles.pastDay,
-                    day.isWeekend && styles.weekendDay,
-                    isAvailable && !day.isWeekend && !day.isPast && styles.availableDay,
-                    day.hasAppointments && styles.appointmentDay,
-                    !day.isPast && !day.isWeekend && !isAvailable && styles.futureDay,
-                  ]}
+                  style={getDayStyle(day)}
                   onPress={() => handleDatePress(day)}
                   disabled={day.isPast}
                 >
-                  <Text style={[
-                    styles.dayText,
-                    day.isPast && styles.pastDayText,
-                    day.isWeekend && styles.weekendDayText,
-                    isAvailable && !day.isWeekend && !day.isPast && styles.availableDayText,
-                    day.hasAppointments && styles.appointmentDayText,
-                    !day.isPast && !day.isWeekend && !isAvailable && styles.futureDayText,
-                    { fontSize: getResponsiveFontSize(14, 15, 16) }
-                  ]}>
-                    {day.day}
-                  </Text>
-                  {day.hasAppointments && (
-                    <View style={styles.appointmentIndicator} />
-                  )}
+                                     <Text style={[
+                     ...getDayTextStyle(day),
+                     { fontSize: getResponsiveFontSize(14, 15, 16) }
+                   ]}>
+                     {day.day}
+                   </Text>
+                   {day.appointments.length > 0 && (
+                     <View style={styles.appointmentIndicator} />
+                   )}
                 </TouchableOpacity>
               );
             })}
@@ -209,6 +256,16 @@ const DoctorCalendar = ({ navigation }) => {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+
+          <View style={{paddingVertical: getResponsivePadding(20, 40, 40)}}>
+          </View>
+
+          {/* Calendar */}
+          <View style={[styles.calendarContainer, { paddingHorizontal: getResponsivePadding(20, 40, 60) }]}>
+            {renderCalendar()}
+          </View>
+
+
           {/* Legend */}
           <View style={[styles.legendContainer, { paddingHorizontal: getResponsivePadding(20, 40, 60) }]}>
             <Text style={[styles.legendTitle, { fontSize: getResponsiveFontSize(16, 17, 18) }]}>
@@ -222,9 +279,21 @@ const DoctorCalendar = ({ navigation }) => {
                 </Text>
               </View>
               <View style={styles.legendItem}>
-                <View style={[styles.legendColor, styles.appointmentDay]} />
+                <View style={[styles.legendColor, styles.withPatientsDay]} />
                 <Text style={[styles.legendText, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
-                  Con citas
+                  Con pacientes
+                </Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendColor, styles.fullDay]} />
+                <Text style={[styles.legendText, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
+                  Completo
+                </Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendColor, styles.unavailableDay]} />
+                <Text style={[styles.legendText, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
+                  No disponible
                 </Text>
               </View>
               <View style={styles.legendItem}>
@@ -233,23 +302,12 @@ const DoctorCalendar = ({ navigation }) => {
                   Pasado
                 </Text>
               </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendColor, styles.weekendDay]} />
-                <Text style={[styles.legendText, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
-                  Fin de semana
-                </Text>
-              </View>
             </View>
           </View>
-
-          {/* Calendar */}
-          <View style={[styles.calendarContainer, { paddingHorizontal: getResponsivePadding(20, 40, 60) }]}>
-            {renderCalendar()}
-          </View>
         </ScrollView>
-      </View>
-    </SafeAreaView>
-  );
+             </View>
+     </SafeAreaView>
+   );
 };
 
 const styles = StyleSheet.create({
@@ -380,39 +438,42 @@ const styles = StyleSheet.create({
   pastDayText: {
     color: '#CCC',
   },
-  weekendDay: {
-    backgroundColor: '#F0F0F0',
-  },
-  weekendDayText: {
-    color: '#999',
-  },
   availableDay: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#E8F5E8', // Light green
   },
   availableDayText: {
-    color: '#1A1A1A',
-  },
-  appointmentDay: {
-    backgroundColor: '#FFF3CD',
-  },
-  appointmentDayText: {
-    color: '#856404',
+    color: '#2E7D32',
     fontWeight: '600',
   },
-  futureDay: {
-    backgroundColor: '#FFFFFF',
+  withPatientsDay: {
+    backgroundColor: '#FFF3E0', // Light orange
   },
-  futureDayText: {
-    color: '#1A1A1A',
+  withPatientsDayText: {
+    color: '#E65100',
+    fontWeight: '600',
   },
-  appointmentIndicator: {
-    position: 'absolute',
-    bottom: 4,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#FFC107',
+  fullDay: {
+    backgroundColor: '#E1BEE7', // Light purple
   },
+  fullDayText: {
+    color: '#4A148C',
+    fontWeight: '600',
+  },
+  unavailableDay: {
+    backgroundColor: '#FFCDD2', // Light red
+  },
+  unavailableDayText: {
+    color: '#C62828',
+    fontWeight: '600',
+  },
+     appointmentIndicator: {
+     position: 'absolute',
+     bottom: 4,
+     width: 6,
+     height: 6,
+     borderRadius: 3,
+     backgroundColor: '#FFC107',
+   },
 });
 
 export default DoctorCalendar; 

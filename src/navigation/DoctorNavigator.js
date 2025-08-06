@@ -19,6 +19,7 @@ const DoctorDashboardStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="DoctorDashboardMain" component={DoctorDashboard} />
     <Stack.Screen name="DoctorChat" component={DoctorChat} />
+    <Stack.Screen name="DoctorPrescriptions" component={DoctorPrescriptions} />
   </Stack.Navigator>
 );
 
@@ -26,6 +27,7 @@ const DoctorPatientsStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="DoctorPatientsMain" component={DoctorPatients} />
     <Stack.Screen name="DoctorChat" component={DoctorChat} />
+    <Stack.Screen name="DoctorPrescriptions" component={DoctorPrescriptions} />
   </Stack.Navigator>
 );
 

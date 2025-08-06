@@ -9,130 +9,41 @@ import {
   Image,
   Alert,
   Modal,
+  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { isWeb, webStyles, getResponsiveSpacing, getResponsiveFontSize, getResponsivePadding } from '../../utils/responsive';
+import { useDoctor } from '../../context/DoctorContext';
 
 const DoctorDashboard = ({ navigation }) => {
   const [showPatientModal, setShowPatientModal] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
-  const [pendingRequests, setPendingRequests] = useState([
-    {
-      id: 1,
-      patientName: 'Ana Torres',
-      patientImage: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-      reason: 'Dolor de cabeza persistente y mareos frecuentes',
-      date: 'Mañana 10:00 AM',
-      clinic: 'Clínica San Martín',
-      status: 'pending',
-      age: 32,
-      email: 'ana.torres@email.com',
-      phone: '+1 234 567 8903',
-      consultations: [
-        {
-          id: 1,
-          date: '15/07/2024',
-          reason: 'Dolor de cabeza persistente y mareos frecuentes',
-          diagnosis: 'Migraña tensional',
-          treatment: 'Ibuprofeno 400mg cada 8 horas',
-          status: 'Pendiente',
-        },
-      ],
-    },
-    {
-      id: 2,
-      patientName: 'Luis Fernández',
-      patientImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-      reason: 'Control de presión arterial y revisión de medicación',
-      date: 'Mañana 02:00 PM',
-      clinic: 'Centro Médico Santa María',
-      status: 'pending',
-      age: 45,
-      email: 'luis.fernandez@email.com',
-      phone: '+1 234 567 8904',
-      consultations: [
-        {
-          id: 1,
-          date: '12/07/2024',
-          reason: 'Control de presión arterial',
-          diagnosis: 'Hipertensión arterial',
-          treatment: 'Lisinopril 10mg diario',
-          status: 'Completada',
-        },
-        {
-          id: 2,
-          date: 'Mañana 02:00 PM',
-          reason: 'Control de presión arterial y revisión de medicación',
-          diagnosis: 'Pendiente',
-          treatment: 'Pendiente',
-          status: 'Pendiente',
-        },
-      ],
-    },
-  ]);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
+  
+    // Use shared context
+  const {
+    patients,
+    pendingRequests,
+    upcomingAppointments,
+    addPatient,
+    removePendingRequest,
+    addUpcomingAppointment,
+    appointments,
+    updateAppointments,
+    availability,
+    updateAvailability,
+  } = useDoctor();
+
+
 
   // Mock data for statistics
   const stats = {
     appointments: 12,
     requests: pendingRequests.length,
-    patients: 28,
+    patients: patients.length,
   };
-
-  // Mock data for upcoming appointments
-  const upcomingAppointments = [
-    {
-      id: 1,
-      patientName: 'María González',
-      patientImage: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-      type: 'Consulta de seguimiento',
-      time: '09:00 AM',
-      clinic: 'Clínica San Martín',
-      date: 'Hoy',
-      age: 28,
-      email: 'maria.gonzalez@email.com',
-      phone: '+1 234 567 8905',
-      consultations: [
-        {
-          id: 1,
-          date: '10/07/2024',
-          reason: 'Control de presión arterial',
-          diagnosis: 'Hipertensión leve',
-          treatment: 'Lisinopril 10mg diario',
-          status: 'Completada',
-        },
-        {
-          id: 2,
-          date: 'Hoy 09:00 AM',
-          reason: 'Consulta de seguimiento',
-          diagnosis: 'Pendiente',
-          treatment: 'Pendiente',
-          status: 'Pendiente',
-        },
-      ],
-    },
-    {
-      id: 2,
-      patientName: 'Carlos Rodríguez',
-      patientImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-      type: 'Primera consulta',
-      time: '11:30 AM',
-      clinic: 'Centro Médico Santa María',
-      date: 'Hoy',
-      age: 35,
-      email: 'carlos.rodriguez@email.com',
-      phone: '+1 234 567 8906',
-      consultations: [
-        {
-          id: 1,
-          date: 'Hoy 11:30 AM',
-          reason: 'Primera consulta',
-          diagnosis: 'Pendiente',
-          treatment: 'Pendiente',
-          status: 'Pendiente',
-        },
-      ],
-    },
-  ];
 
 
 
@@ -145,8 +56,69 @@ const DoctorDashboard = ({ navigation }) => {
         { 
           text: 'Aceptar', 
           onPress: () => {
-            setPendingRequests(prev => prev.filter(req => req.id !== request.id));
-            Alert.alert('Éxito', `Solicitud de ${request.patientName} aceptada`);
+            // Remove from pending requests
+            removePendingRequest(request.id);
+            
+            // Add to patients list
+            const newPatient = {
+              name: request.patientName,
+              image: request.patientImage,
+              lastVisit: new Date().toISOString().split('T')[0],
+              nextAppointment: request.date,
+              unreadMessages: 0,
+              hasPrescription: false,
+              age: request.age,
+              email: request.email,
+              phone: request.phone,
+              consultations: request.consultations,
+            };
+            addPatient(newPatient);
+            
+            // Add to upcoming appointments
+            const newAppointment = {
+              patientName: request.patientName,
+              patientImage: request.patientImage,
+              type: 'Nueva consulta',
+              time: (request.date.split(' ')[1] + ' ' + request.date.split(' ')[2]) || '10:00 AM',
+              clinic: request.clinic,
+              date: request.date.split(' ')[0] || 'Mañana',
+              age: request.age,
+              email: request.email,
+              phone: request.phone,
+              consultations: request.consultations,
+            };
+            addUpcomingAppointment(newAppointment);
+            
+            // Add appointment to calendar
+            const appointmentDate = new Date();
+            if (request.date.includes('Mañana')) {
+              appointmentDate.setDate(appointmentDate.getDate() + 1);
+            }
+            // Use the same date key format as in DoctorContext
+            const dateKey = `${appointmentDate.getFullYear()}-${appointmentDate.getMonth()}-${appointmentDate.getDate()}`;
+            
+            // Get current appointments for this date
+            const currentAppointments = appointments[dateKey] || [];
+            const newCalendarAppointment = {
+              id: Date.now(),
+              time: (request.date.split(' ')[1] + ' ' + request.date.split(' ')[2]) || '10:00 AM',
+              patient: {
+                name: request.patientName,
+                reason: request.reason,
+                clinic: request.clinic
+              }
+            };
+            
+            // Update calendar appointments
+            updateAppointments(dateKey, [...currentAppointments, newCalendarAppointment]);
+            
+            // Update availability - remove the time slot that was booked
+            const currentAvailability = availability[dateKey] || [];
+            const appointmentTime = (request.date.split(' ')[1] + ' ' + request.date.split(' ')[2]) || '10:00 AM';
+            const updatedAvailability = currentAvailability.filter(slot => slot.time !== appointmentTime);
+            updateAvailability(dateKey, updatedAvailability);
+            
+            Alert.alert('Éxito', `Solicitud de ${request.patientName} aceptada. El paciente ha sido agregado a tu lista, la cita ha sido programada y agregada al calendario.`);
           }
         },
       ]
@@ -154,21 +126,28 @@ const DoctorDashboard = ({ navigation }) => {
   };
 
   const handleDeclineRequest = (request) => {
-    Alert.alert(
-      'Rechazar solicitud',
-      `¿Rechazar la solicitud de ${request.patientName}?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Rechazar', 
-          style: 'destructive', 
-          onPress: () => {
-            setPendingRequests(prev => prev.filter(req => req.id !== request.id));
-            Alert.alert('Solicitud rechazada', `La solicitud de ${request.patientName} ha sido rechazada`);
-          }
-        },
-      ]
-    );
+    setSelectedRequest(request);
+    setRejectReason('');
+    setShowRejectModal(true);
+  };
+
+  const handleConfirmReject = () => {
+    if (!rejectReason.trim()) {
+      Alert.alert('Error', 'Por favor proporciona una razón para rechazar la solicitud');
+      return;
+    }
+
+    // Remove from pending requests
+    removePendingRequest(selectedRequest.id);
+    
+    // Here you would typically send the rejection reason to the backend
+    console.log(`Solicitud rechazada para ${selectedRequest.patientName}. Razón: ${rejectReason}`);
+    
+    setShowRejectModal(false);
+    setSelectedRequest(null);
+    setRejectReason('');
+    
+    Alert.alert('Solicitud rechazada', `La solicitud de ${selectedRequest.patientName} ha sido rechazada`);
   };
 
   const handleChatWithPatient = (appointment) => {
@@ -434,6 +413,61 @@ const DoctorDashboard = ({ navigation }) => {
                 </>
               )}
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Reject Reason Modal */}
+      <Modal
+        visible={showRejectModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowRejectModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { fontSize: getResponsiveFontSize(20, 22, 24) }]}>
+                Rechazar Solicitud
+              </Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setShowRejectModal(false)}
+              >
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.modalBody}>
+              <Text style={[styles.modalText, { fontSize: getResponsiveFontSize(16, 17, 18) }]}>
+                Por favor, proporciona una razón para rechazar la solicitud de {selectedRequest?.patientName}.
+              </Text>
+              <TextInput
+                style={[styles.rejectReasonInput, { fontSize: getResponsiveFontSize(14, 15, 16) }]}
+                placeholder="Razón de rechazo..."
+                multiline
+                numberOfLines={4}
+                value={rejectReason}
+                onChangeText={setRejectReason}
+              />
+            </View>
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.confirmRejectButton}
+                onPress={handleConfirmReject}
+              >
+                <Text style={[styles.confirmRejectButtonText, { fontSize: getResponsiveFontSize(16, 17, 18) }]}>
+                  Confirmar Rechazo
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.cancelRejectButton}
+                onPress={() => setShowRejectModal(false)}
+              >
+                <Text style={[styles.cancelRejectButtonText, { fontSize: getResponsiveFontSize(16, 17, 18) }]}>
+                  Cancelar
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -758,6 +792,51 @@ const styles = StyleSheet.create({
     color: '#666',
     lineHeight: 20,
     marginBottom: 8,
+  },
+  // Reject Reason Modal Styles
+  modalText: {
+    color: '#333',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  rejectReasonInput: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    padding: 12,
+    minHeight: 100,
+    textAlignVertical: 'top',
+    fontSize: getResponsiveFontSize(14, 15, 16),
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  confirmRejectButton: {
+    flex: 1,
+    backgroundColor: '#FF3B30',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  confirmRejectButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  cancelRejectButton: {
+    flex: 1,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  cancelRejectButtonText: {
+    color: '#333',
+    fontWeight: '600',
   },
 });
 

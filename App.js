@@ -11,6 +11,7 @@ if (Platform.OS === 'web') {
 
 // Import context
 import { PrescriptionProvider } from './src/context/PrescriptionContext';
+import { DoctorProvider } from './src/context/DoctorContext';
 
 // Import screens
 import UserTypeSelection from './src/screens/UserTypeSelection';
@@ -25,17 +26,19 @@ export default function App() {
 
   return (
     <PrescriptionProvider>
-      <NavigationContainer>
-        <StatusBar style="auto" />
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="UserTypeSelection">
-            {(props) => <UserTypeSelection {...props} setUserType={setUserType} />}
-          </Stack.Screen>
-          <Stack.Screen name="PatientNavigator" component={PatientNavigator} />
-          <Stack.Screen name="DoctorNavigator" component={DoctorNavigator} />
-          <Stack.Screen name="ClinicNavigator" component={ClinicNavigator} />
-        </Stack.Navigator>
-      </NavigationContainer>
+      <DoctorProvider>
+        <NavigationContainer>
+          <StatusBar style="auto" />
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="UserTypeSelection">
+              {(props) => <UserTypeSelection {...props} setUserType={setUserType} />}
+            </Stack.Screen>
+            <Stack.Screen name="PatientNavigator" component={PatientNavigator} />
+            <Stack.Screen name="DoctorNavigator" component={DoctorNavigator} />
+            <Stack.Screen name="ClinicNavigator" component={ClinicNavigator} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </DoctorProvider>
     </PrescriptionProvider>
   );
 }

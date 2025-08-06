@@ -14,6 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { isWeb, webStyles, getResponsiveSpacing, getResponsiveFontSize, getResponsivePadding } from '../../utils/responsive';
 import { usePrescriptions } from '../../context/PrescriptionContext';
+import { useDoctor } from '../../context/DoctorContext';
 
 const DoctorPatients = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -39,127 +40,8 @@ const DoctorPatients = ({ navigation }) => {
   // Use shared prescription context
   const { prescriptions, addPrescription, updatePrescription, deletePrescription, getPrescriptionsByPatient } = usePrescriptions();
 
-  // Mock data for patients
-  const [patients, setPatients] = useState([
-    {
-      id: 1,
-      name: 'Maria Garcia',
-      image: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-      lastVisit: '2024-07-10',
-      nextAppointment: '2024-07-15',
-      unreadMessages: 2,
-      hasPrescription: false,
-      age: 28,
-      email: 'maria.garcia@email.com',
-      phone: '+1 234 567 8901',
-      consultations: [
-        {
-          id: 1,
-          date: '10/07/2024',
-          reason: 'Control de presión arterial',
-          diagnosis: 'Hipertensión leve',
-          treatment: 'Lisinopril 10mg diario',
-          status: 'Completada',
-        },
-        {
-          id: 2,
-          date: '15/07/2024',
-          reason: 'Seguimiento de tratamiento',
-          diagnosis: 'Pendiente',
-          treatment: 'Pendiente',
-          status: 'Pendiente',
-        },
-      ],
-    },
-    {
-      id: 2,
-      name: 'Carlos Rodriguez',
-      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-      lastVisit: '2024-07-08',
-      nextAppointment: '2024-07-20',
-      unreadMessages: 0,
-      hasPrescription: true,
-      age: 35,
-      email: 'carlos.rodriguez@email.com',
-      phone: '+1 234 567 8902',
-      consultations: [
-        {
-          id: 1,
-          date: '08/07/2024',
-          reason: 'Dolor de cabeza persistente',
-          diagnosis: 'Migraña tensional',
-          treatment: 'Ibuprofeno 400mg cada 8 horas',
-          status: 'Completada',
-        },
-      ],
-    },
-    {
-      id: 3,
-      name: 'Ana Torres',
-      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-      lastVisit: '2024-07-05',
-      nextAppointment: '2024-07-18',
-      unreadMessages: 1,
-      hasPrescription: false,
-      age: 42,
-      email: 'ana.torres@email.com',
-      phone: '+1 234 567 8903',
-      consultations: [
-        {
-          id: 1,
-          date: '05/07/2024',
-          reason: 'Control de diabetes',
-          diagnosis: 'Diabetes tipo 2',
-          treatment: 'Metformina 500mg dos veces al día',
-          status: 'Completada',
-        },
-      ],
-    },
-    {
-      id: 4,
-      name: 'Luis Fernandez',
-      image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-      lastVisit: '2024-07-03',
-      nextAppointment: '2024-07-22',
-      unreadMessages: 0,
-      hasPrescription: true,
-      age: 31,
-      email: 'luis.fernandez@email.com',
-      phone: '+1 234 567 8904',
-      consultations: [
-        {
-          id: 1,
-          date: '03/07/2024',
-          reason: 'Dolor de espalda',
-          diagnosis: 'Lumbalgia',
-          treatment: 'Paracetamol 500mg cada 6 horas',
-          status: 'Completada',
-        },
-      ],
-    },
-    {
-      id: 5,
-      name: 'Sofia Ramirez',
-      image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face',
-      lastVisit: '2024-06-28',
-      nextAppointment: '2024-07-25',
-      unreadMessages: 3,
-      hasPrescription: false,
-      age: 26,
-      email: 'sofia.ramirez@email.com',
-      phone: '+1 234 567 8905',
-      consultations: [
-        {
-          id: 1,
-          date: '28/06/2024',
-          reason: 'Consulta general',
-          diagnosis: 'Resfriado común',
-          treatment: 'Descanso y líquidos abundantes',
-          status: 'Completada',
-        },
-      ],
-    },
-  ]);
+    // Use shared doctor context
+  const { patients, updatePatient } = useDoctor();
 
   const filteredPatients = patients.filter(patient =>
     patient.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -247,12 +129,10 @@ const DoctorPatients = ({ navigation }) => {
       addPrescription(newPrescription);
       
       // Update patient's hasPrescription status
-      const updatedPatients = patients.map(p => 
-        p.name === prescriptionForm.patientName 
-          ? { ...p, hasPrescription: true }
-          : p
-      );
-      setPatients(updatedPatients);
+      const patientToUpdate = patients.find(p => p.name === prescriptionForm.patientName);
+      if (patientToUpdate) {
+        updatePatient(patientToUpdate.id, { hasPrescription: true });
+      }
       
       Alert.alert('Éxito', 'Receta registrada correctamente');
     }
@@ -287,12 +167,10 @@ const DoctorPatients = ({ navigation }) => {
             // Check if patient still has other prescriptions
             const patientPrescriptions = getPrescriptionsByPatient(prescription.patientName);
             if (patientPrescriptions.length === 0) {
-              const updatedPatients = patients.map(p => 
-                p.name === prescription.patientName 
-                  ? { ...p, hasPrescription: false }
-                  : p
-              );
-              setPatients(updatedPatients);
+              const patientToUpdate = patients.find(p => p.name === prescription.patientName);
+              if (patientToUpdate) {
+                updatePatient(patientToUpdate.id, { hasPrescription: false });
+              }
             }
             
             Alert.alert('Éxito', 'Receta eliminada correctamente');
@@ -316,11 +194,6 @@ const DoctorPatients = ({ navigation }) => {
       <View style={styles.patientInfo}>
         <View style={styles.patientImageContainer}>
           <Image source={{ uri: patient.image }} style={styles.patientImage} />
-          {patient.unreadMessages > 0 && (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadBadgeText}>{patient.unreadMessages}</Text>
-            </View>
-          )}
         </View>
         <View style={styles.patientDetails}>
           <Text style={[styles.patientName, { fontSize: getResponsiveFontSize(16, 17, 18) }]}>
@@ -345,14 +218,14 @@ const DoctorPatients = ({ navigation }) => {
       
       <View style={styles.patientActions}>
         <TouchableOpacity
-          style={styles.actionButton}
+          style={[styles.actionButton, styles.chatButton]}
           onPress={(e) => {
             e.stopPropagation();
             handleChatPress(patient);
           }}
         >
-          <Ionicons name="chatbubble" size={getResponsiveFontSize(16, 17, 18)} color="#007AFF" />
-          <Text style={[styles.actionButtonText, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
+          <Ionicons name="chatbubble" size={getResponsiveFontSize(16, 17, 18)} color="#FFFFFF" />
+          <Text style={[styles.actionButtonText, styles.chatButtonText, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
             Chat
           </Text>
           {patient.unreadMessages > 0 && (
@@ -363,32 +236,30 @@ const DoctorPatients = ({ navigation }) => {
         </TouchableOpacity>
         
         <TouchableOpacity
-          style={styles.actionButton}
+          style={[styles.actionButton, styles.prescriptionButton]}
           onPress={(e) => {
             e.stopPropagation();
-            handleNewPrescription(patient);
+            handlePrescriptionPress(patient);
           }}
         >
-          <Ionicons name="add-circle" size={getResponsiveFontSize(16, 17, 18)} color="#34C759" />
-          <Text style={[styles.actionButtonText, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
+          <Ionicons name="add-circle" size={getResponsiveFontSize(16, 17, 18)} color="#FFFFFF" />
+          <Text style={[styles.actionButtonText, styles.prescriptionButtonText, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
             Nueva receta
           </Text>
         </TouchableOpacity>
 
-        {patient.hasPrescription && (
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={(e) => {
-              e.stopPropagation();
-              handleViewPrescriptions(patient);
-            }}
-          >
-            <Ionicons name="document-text" size={getResponsiveFontSize(16, 17, 18)} color="#FF9500" />
-            <Text style={[styles.actionButtonText, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
-              Ver recetas
-            </Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={[styles.actionButton, styles.viewPrescriptionButton]}
+          onPress={(e) => {
+            e.stopPropagation();
+            handleViewPrescriptions(patient);
+          }}
+        >
+          <Ionicons name="document-text" size={getResponsiveFontSize(16, 17, 18)} color="#FFFFFF" />
+          <Text style={[styles.actionButtonText, styles.viewPrescriptionButtonText, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
+            Ver recetas
+          </Text>
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
@@ -1109,21 +980,30 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#007AFF',
     position: 'relative',
   },
   actionButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#007AFF',
     marginLeft: 8,
   },
+  chatButton: {
+    backgroundColor: '#007AFF',
+  },
+  chatButtonText: {
+    color: '#FFFFFF',
+  },
   prescriptionButton: {
-    borderColor: '#34C759',
+    backgroundColor: '#34C759',
   },
   prescriptionButtonText: {
-    color: '#34C759',
+    color: '#FFFFFF',
+  },
+  viewPrescriptionButton: {
+    backgroundColor: '#FF9500',
+  },
+  viewPrescriptionButtonText: {
+    color: '#FFFFFF',
   },
   actionUnreadBadge: {
     position: 'absolute',

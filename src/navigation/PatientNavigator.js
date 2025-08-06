@@ -9,6 +9,7 @@ import PatientClinics from '../screens/patient/PatientClinics';
 import PatientAppointments from '../screens/patient/PatientAppointments';
 import PatientProfile from '../screens/patient/PatientProfile';
 import PatientChat from '../screens/patient/PatientChat';
+import PatientPrescriptions from '../screens/patient/PatientPrescriptions';
 import DoctorDetail from '../screens/patient/DoctorDetail';
 import BookAppointment from '../screens/patient/BookAppointment';
 import ChatScreen from '../screens/patient/ChatScreen';
@@ -59,6 +60,12 @@ const PatientProfileStack = () => (
   </Stack.Navigator>
 );
 
+const PatientPrescriptionsStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="PatientPrescriptionsMain" component={PatientPrescriptions} />
+  </Stack.Navigator>
+);
+
 const PatientNavigator = () => {
   return (
     <Tab.Navigator
@@ -74,6 +81,8 @@ const PatientNavigator = () => {
             iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
           } else if (route.name === 'Appointments') {
             iconName = focused ? 'calendar' : 'calendar-outline';
+          } else if (route.name === 'Prescriptions') {
+            iconName = focused ? 'medical' : 'medical-outline';
           } else if (route.name === 'Profile') {
             iconName = focused ? 'person' : 'person-outline';
           }
@@ -89,6 +98,7 @@ const PatientNavigator = () => {
       <Tab.Screen name="Clinics" component={PatientClinicsStack} />
       <Tab.Screen name="Chat" component={PatientChatStack} />
       <Tab.Screen name="Appointments" component={PatientAppointmentsStack} />
+      <Tab.Screen name="Prescriptions" component={PatientPrescriptionsStack} />
       <Tab.Screen name="Profile" component={PatientProfileStack} />
     </Tab.Navigator>
   );

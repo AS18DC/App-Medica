@@ -10,11 +10,15 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { isWeb, webStyles, getResponsiveSpacing, getResponsiveFontSize, getResponsivePadding } from '../../utils/responsive';
+import { useDoctor } from '../../context/DoctorContext';
 
 const DoctorDayView = ({ navigation, route }) => {
-  const { date, monthIndex } = route.params;
+  const { date } = route.params;
   const [timeSlots, setTimeSlots] = useState([]);
   const [dayAvailable, setDayAvailable] = useState(true);
+  
+  // Use shared context
+  const { availability, appointments, updateAvailability } = useDoctor();
 
   useEffect(() => {
     // Generate time slots from 7 AM to 5 PM with 30-minute intervals
@@ -27,37 +31,90 @@ const DoctorDayView = ({ navigation, route }) => {
         const adjustedHour = hour > 12 ? hour - 12 : hour;
         const displayTime = `${adjustedHour}:${minute.toString().padStart(2, '0')} ${hour >= 12 ? 'PM' : 'AM'}`;
         
+        // Check if this time slot has an appointment with a patient
+        const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+        const dayAppointments = appointments[dateKey] || [];
+        const dayAvailability = availability[dateKey] || [];
+        
+        // Find if there's an appointment at this time
+        const appointment = dayAppointments.find(apt => apt.time === displayTime);
+        const hasAppointment = appointment && appointment.patient; // Only count appointments with patients
+        
         slots.push({
           time: displayTime,
           originalTime: timeString,
-          available: Math.random() > 0.3, // Random availability for demo
-          hasAppointment: Math.random() > 0.7, // Random appointments for demo
-          patient: Math.random() > 0.7 ? {
-            name: 'María González',
-            reason: 'Control de presión arterial',
-            clinic: 'Clínica San Martín'
-          } : null,
+          available: dayAvailability.some(avail => avail.time === displayTime),
+          hasAppointment: hasAppointment,
+          patient: hasAppointment ? appointment.patient : null,
         });
       }
     }
     setTimeSlots(slots);
-  }, [date]);
+    
+    // Update day availability based on slots
+    const availableSlots = slots.filter(s => s.available && !s.hasAppointment).length;
+    setDayAvailable(availableSlots > 0);
+  }, [date, availability, appointments]);
 
   const handleToggleAvailability = () => {
     const newAvailability = !dayAvailable;
     setDayAvailable(newAvailability);
     
     // Update all time slots to match day availability
-    setTimeSlots(prevSlots => 
-      prevSlots.map(slot => ({
-        ...slot,
-        available: newAvailability
-      }))
-    );
+    const updatedSlots = timeSlots.map(slot => ({
+      ...slot,
+      available: newAvailability && !slot.hasAppointment
+    }));
+    setTimeSlots(updatedSlots);
+    
+    // Update availability in context
+    const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    if (newAvailability) {
+      // Add availability for all non-appointment slots
+      const newAvailabilityHours = updatedSlots
+        .filter(slot => slot.available && !slot.hasAppointment)
+        .map(slot => ({
+          id: Date.now() + Math.random(),
+          time: slot.time,
+          isAvailable: true
+        }));
+      updateAvailability(dateKey, newAvailabilityHours);
+    } else {
+      // Remove all availability
+      updateAvailability(dateKey, []);
+    }
     
     Alert.alert(
       'Disponibilidad del día',
       `El día ha sido marcado como ${newAvailability ? 'disponible' : 'no disponible'}`
+    );
+  };
+
+  const handleRemoveDayAvailability = () => {
+    Alert.alert(
+      'Eliminar disponibilidad del día',
+      '¿Estás seguro de que quieres eliminar toda la disponibilidad para este día?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Eliminar', 
+          style: 'destructive',
+          onPress: () => {
+            const updatedSlots = timeSlots.map(slot => ({
+              ...slot,
+              available: false
+            }));
+            setTimeSlots(updatedSlots);
+            setDayAvailable(false);
+            
+            // Update availability in context
+            const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+            updateAvailability(dateKey, []);
+            
+            Alert.alert('Disponibilidad eliminada', 'La disponibilidad del día ha sido eliminada');
+          }
+        }
+      ]
     );
   };
 
@@ -97,6 +154,17 @@ const DoctorDayView = ({ navigation, route }) => {
       // Update day availability based on slots
       const availableSlots = newSlots.filter(s => s.available && !s.hasAppointment).length;
       setDayAvailable(availableSlots > 0);
+      
+      // Update availability in context
+      const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+      const newAvailabilityHours = newSlots
+        .filter(s => s.available && !s.hasAppointment)
+        .map(s => ({
+          id: Date.now() + Math.random(),
+          time: s.time,
+          isAvailable: true
+        }));
+      updateAvailability(dateKey, newAvailabilityHours);
     }
   };
 
@@ -217,14 +285,25 @@ const DoctorDayView = ({ navigation, route }) => {
               <Text style={[styles.summaryTitle, { fontSize: getResponsiveFontSize(18, 20, 22) }]}>
                 Resumen del día
               </Text>
-              <TouchableOpacity
-                style={[styles.toggleButton, dayAvailable ? styles.toggleButtonActive : styles.toggleButtonInactive]}
-                onPress={handleToggleAvailability}
-              >
-                <Text style={[styles.toggleButtonText, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                  {dayAvailable ? 'Día disponible' : 'Día no disponible'}
-                </Text>
-              </TouchableOpacity>
+              <View style={styles.summaryButtons}>
+                <TouchableOpacity
+                  style={[styles.toggleButton, dayAvailable ? styles.toggleButtonActive : styles.toggleButtonInactive]}
+                  onPress={handleToggleAvailability}
+                >
+                  <Text style={[styles.toggleButtonText, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
+                    {dayAvailable ? 'Día disponible' : 'Día no disponible'}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.removeDayButton}
+                  onPress={handleRemoveDayAvailability}
+                >
+                  <Ionicons name="trash-outline" size={16} color="#FF3B30" />
+                  <Text style={[styles.removeDayButtonText, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
+                    Eliminar día
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
             
             <View style={styles.summaryStats}>
@@ -357,6 +436,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1A1A1A',
   },
+  summaryButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   toggleButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -371,6 +455,21 @@ const styles = StyleSheet.create({
   toggleButtonText: {
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+  removeDayButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#FFF5F5',
+    borderWidth: 1,
+    borderColor: '#FF3B30',
+  },
+  removeDayButtonText: {
+    color: '#FF3B30',
+    fontWeight: '600',
+    marginLeft: 4,
   },
   summaryStats: {
     flexDirection: 'row',

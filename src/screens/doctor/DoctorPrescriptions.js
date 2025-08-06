@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { isWeb, webStyles, getResponsiveSpacing, getResponsiveFontSize, getResponsivePadding } from '../../utils/responsive';
 import { usePrescriptions } from '../../context/PrescriptionContext';
+import { useDoctor } from '../../context/DoctorContext';
 
 const DoctorPrescriptions = ({ navigation, route }) => {
   const { patient, mode } = route.params || {};
@@ -21,6 +22,8 @@ const DoctorPrescriptions = ({ navigation, route }) => {
   const [selectedPrescription, setSelectedPrescription] = useState(null);
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [showPatientList, setShowPatientList] = useState(false);
+  const [filteredPatients, setFilteredPatients] = useState([]);
   
   // Form state for new/edit prescription
   const [prescriptionForm, setPrescriptionForm] = useState({
@@ -35,6 +38,9 @@ const DoctorPrescriptions = ({ navigation, route }) => {
 
   // Use shared prescription context
   const { prescriptions, addPrescription, updatePrescription, deletePrescription, getPrescriptionsByPatient } = usePrescriptions();
+  
+  // Use shared doctor context to get patients
+  const { patients, updatePatient } = useDoctor();
 
   useEffect(() => {
     if (patient && mode === 'new') {
@@ -74,6 +80,27 @@ const DoctorPrescriptions = ({ navigation, route }) => {
     setShowNewPrescriptionModal(true);
   };
 
+  const handlePatientNameChange = (text) => {
+    setPrescriptionForm({...prescriptionForm, patientName: text});
+    
+    if (text.length > 0) {
+      const filtered = patients.filter(patient => 
+        patient.name.toLowerCase().includes(text.toLowerCase())
+      );
+      setFilteredPatients(filtered);
+      setShowPatientList(true);
+    } else {
+      setShowPatientList(false);
+      setFilteredPatients([]);
+    }
+  };
+
+  const handleSelectPatient = (selectedPatient) => {
+    setPrescriptionForm({...prescriptionForm, patientName: selectedPatient.name});
+    setShowPatientList(false);
+    setFilteredPatients([]);
+  };
+
   const handleEditPrescription = (prescription) => {
     setPrescriptionForm({
       patientName: prescription.patientName,
@@ -92,6 +119,13 @@ const DoctorPrescriptions = ({ navigation, route }) => {
   const handleSavePrescription = () => {
     if (!prescriptionForm.patientName || !prescriptionForm.medication) {
       Alert.alert('Error', 'Por favor completa los campos obligatorios');
+      return;
+    }
+
+    // Check if patient exists in doctor's patient list
+    const patientExists = patients.find(p => p.name === prescriptionForm.patientName);
+    if (!patientExists) {
+      Alert.alert('Error', 'Solo puedes asignar recetas a pacientes que tengas en tu lista');
       return;
     }
 
@@ -114,7 +148,11 @@ const DoctorPrescriptions = ({ navigation, route }) => {
         status: 'Activa',
       };
       addPrescription(newPrescription);
-      Alert.alert('Éxito', 'Receta registrada correctamente');
+      
+      // Update patient's hasPrescription status
+      updatePatient(patientExists.id, { hasPrescription: true });
+      
+      Alert.alert('Éxito', 'Receta registrada correctamente y actualizada en el chat');
     }
 
     setShowNewPrescriptionModal(false);
@@ -148,6 +186,16 @@ const DoctorPrescriptions = ({ navigation, route }) => {
           onPress: () => {
             deletePrescription(prescription.id);
             setShowPrescriptionModal(false);
+            
+            // Check if patient still has other prescriptions
+            const patientPrescriptions = getPrescriptionsByPatient(prescription.patientName);
+            if (patientPrescriptions.length === 0) {
+              const patientToUpdate = patients.find(p => p.name === prescription.patientName);
+              if (patientToUpdate) {
+                updatePatient(patientToUpdate.id, { hasPrescription: false });
+              }
+            }
+            
             Alert.alert('Éxito', 'Receta eliminada correctamente');
           }
         },
@@ -290,10 +338,25 @@ const DoctorPrescriptions = ({ navigation, route }) => {
                 </Text>
                 <TextInput
                   style={[styles.formInput, { fontSize: getResponsiveFontSize(14, 15, 16) }]}
-                  placeholder="Nombre completo del paciente"
+                  placeholder="Escribe el nombre del paciente..."
                   value={prescriptionForm.patientName}
-                  onChangeText={(text) => setPrescriptionForm({...prescriptionForm, patientName: text})}
+                  onChangeText={handlePatientNameChange}
                 />
+                {showPatientList && filteredPatients.length > 0 && (
+                  <View style={styles.patientListContainer}>
+                    {filteredPatients.map((patient, index) => (
+                      <TouchableOpacity
+                        key={patient.id}
+                        style={styles.patientListItem}
+                        onPress={() => handleSelectPatient(patient)}
+                      >
+                        <Text style={[styles.patientListItemText, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
+                          {patient.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
               </View>
 
               <View style={styles.formSection}>
@@ -928,6 +991,24 @@ const styles = StyleSheet.create({
   },
   deleteButtonText: {
     color: '#FFFFFF',
+  },
+  patientListContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    maxHeight: 150,
+    marginTop: 4,
+  },
+  patientListItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  patientListItemText: {
+    color: '#1A1A1A',
+    fontWeight: '500',
   },
 });
 
