@@ -18,6 +18,23 @@ const ClinicDetail = ({ navigation, route }) => {
   const clinicData = {
     ...clinic,
     description: 'Clínica San Lucas es un centro médico integral que ofrece servicios de alta calidad en múltiples especialidades. Contamos con un equipo de profesionales altamente calificados y tecnología de vanguardia para brindar la mejor atención a nuestros pacientes.',
+    specialties: [
+      'Cardiología',
+      'Dermatología',
+      'Endocrinología',
+      'Gastroenterología',
+      'Ginecología',
+      'Neurología',
+      'Oftalmología',
+      'Ortopedia',
+      'Pediatría',
+      'Psiquiatría',
+      'Radiología',
+      'Urología',
+      'Medicina General',
+      'Fisioterapia',
+      'Nutrición',
+    ],
     services: [
       'Consulta General',
       'Cardiología',
@@ -25,6 +42,12 @@ const ClinicDetail = ({ navigation, route }) => {
       'Primeros Auxilios',
       'Laboratorio',
       'Radiología',
+      'Ecografías',
+      'Tomografías',
+      'Resonancia Magnética',
+      'Análisis de Sangre',
+      'Electrocardiograma',
+      'Espirometría',
     ],
     doctors: [
       {
@@ -32,7 +55,7 @@ const ClinicDetail = ({ navigation, route }) => {
         name: 'Dr. Sofia Ramirez',
         specialty: 'Cardiología',
         experience: '15 años',
-        image: 'https://via.placeholder.com/60',
+        image: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop&crop=face',
         rating: 4.8,
       },
       {
@@ -40,7 +63,7 @@ const ClinicDetail = ({ navigation, route }) => {
         name: 'Dr. Carlos Mendoza',
         specialty: 'Medicina General',
         experience: '12 años',
-        image: 'https://via.placeholder.com/60',
+        image: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&h=150&fit=crop&crop=face',
         rating: 4.6,
       },
       {
@@ -48,7 +71,7 @@ const ClinicDetail = ({ navigation, route }) => {
         name: 'Dr. Ana Torres',
         specialty: 'Pediatría',
         experience: '8 años',
-        image: 'https://via.placeholder.com/60',
+        image: 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=150&h=150&fit=crop&crop=face',
         rating: 4.9,
       },
     ],
@@ -93,7 +116,7 @@ const ClinicDetail = ({ navigation, route }) => {
       name: 'Dr. Sofia Ramirez',
       specialty: 'Cardiología',
       experience: '15 años',
-      image: 'https://via.placeholder.com/80',
+      image: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop&crop=face',
       rating: 4.8,
     },
     {
@@ -101,7 +124,7 @@ const ClinicDetail = ({ navigation, route }) => {
       name: 'Dr. Carlos Mendoza',
       specialty: 'Dermatología',
       experience: '12 años',
-      image: 'https://via.placeholder.com/80',
+      image: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&h=150&fit=crop&crop=face',
       rating: 4.6,
     },
     {
@@ -109,7 +132,7 @@ const ClinicDetail = ({ navigation, route }) => {
       name: 'Dr. Ana Torres',
       specialty: 'Pediatría',
       experience: '8 años',
-      image: 'https://via.placeholder.com/80',
+      image: 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=150&h=150&fit=crop&crop=face',
       rating: 4.9,
     },
     {
@@ -117,7 +140,7 @@ const ClinicDetail = ({ navigation, route }) => {
       name: 'Dr. Javier Rodriguez',
       specialty: 'Neurología',
       experience: '10 años',
-      image: 'https://via.placeholder.com/80',
+      image: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&h=150&fit=crop&crop=face',
       rating: 4.7,
     },
   ];
@@ -157,14 +180,18 @@ const ClinicDetail = ({ navigation, route }) => {
 
       {/* Specialties */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Especialidades</Text>
+        <Text style={styles.sectionTitle}>Especialidades Médicas</Text>
         <View style={styles.specialtiesContainer}>
           {clinicData.specialties?.map((specialty, index) => (
             <View key={index} style={styles.specialtyChip}>
+              <Ionicons name="medical" size={14} color="#FFFFFF" style={styles.specialtyIcon} />
               <Text style={styles.specialtyText}>{specialty}</Text>
             </View>
           ))}
         </View>
+        <Text style={styles.specialtiesNote}>
+          Contamos con {clinicData.specialties?.length} especialidades médicas
+        </Text>
       </View>
 
       {/* Available Doctors */}
@@ -199,17 +226,17 @@ const ClinicDetail = ({ navigation, route }) => {
         <Text style={styles.sectionTitle}>Acciones rápidas</Text>
         <View style={styles.actionsContainer}>
           <TouchableOpacity style={styles.actionCard}>
-            <Ionicons name="calendar-outline" size={32} color="#FF9500" />
+            <Ionicons name="calendar-outline" size={28} color="#FF9500" />
             <Text style={styles.actionTitle}>Agendar cita</Text>
             <Text style={styles.actionDescription}>Reserva tu consulta</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionCard}>
-            <Ionicons name="call-outline" size={32} color="#007AFF" />
+            <Ionicons name="call-outline" size={28} color="#007AFF" />
             <Text style={styles.actionTitle}>Contactar</Text>
             <Text style={styles.actionDescription}>Llama a la clínica</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionCard}>
-            <Ionicons name="location-outline" size={32} color="#34C759" />
+            <Ionicons name="location-outline" size={28} color="#34C759" />
             <Text style={styles.actionTitle}>Ubicación</Text>
             <Text style={styles.actionDescription}>Ver en mapa</Text>
           </TouchableOpacity>
@@ -255,28 +282,36 @@ const ClinicDetail = ({ navigation, route }) => {
     switch (activeTab) {
       case 'home':
         return renderHomeContent();
-      case 'info':
-        return renderInfoContent();
       case 'doctors':
         return (
           <View style={styles.tabContent}>
             <Text style={styles.sectionTitle}>Médicos</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.doctorsVerticalContainer}>
               {clinicData.doctors.map((doctor) => (
                 <TouchableOpacity
                   key={doctor.id}
-                  style={styles.doctorCard}
+                  style={styles.doctorHorizontalCard}
                   onPress={() => navigation.navigate('DoctorDetail', { doctor })}
                 >
-                  <Image source={{ uri: doctor.image }} style={styles.doctorImage} />
-                  <Text style={styles.doctorName}>{doctor.name}</Text>
-                  <Text style={styles.doctorSpecialty}>{doctor.specialty}</Text>
-                  <Text style={styles.doctorExperience}>{doctor.experience}</Text>
+                  <Image source={{ uri: doctor.image }} style={styles.doctorHorizontalImage} />
+                  <View style={styles.doctorHorizontalInfo}>
+                    <Text style={styles.doctorHorizontalName}>{doctor.name}</Text>
+                    <Text style={styles.doctorHorizontalSpecialty}>{doctor.specialty}</Text>
+                    <Text style={styles.doctorHorizontalExperience}>{doctor.experience}</Text>
+                    <View style={styles.doctorHorizontalRating}>
+                      <View style={styles.starsContainer}>
+                        {renderStars(doctor.rating)}
+                      </View>
+                      <Text style={styles.doctorHorizontalRatingText}>{doctor.rating}</Text>
+                    </View>
+                  </View>
                 </TouchableOpacity>
               ))}
-            </ScrollView>
+            </View>
           </View>
         );
+      case 'info':
+        return renderInfoContent();
       case 'reviews':
         return (
           <View style={styles.tabContent}>
@@ -323,19 +358,19 @@ const ClinicDetail = ({ navigation, route }) => {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'info' && styles.activeTab]}
-            onPress={() => setActiveTab('info')}
-          >
-            <Text style={[styles.tabText, activeTab === 'info' && styles.activeTabText]}>
-              Info
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
             style={[styles.tab, activeTab === 'doctors' && styles.activeTab]}
             onPress={() => setActiveTab('doctors')}
           >
             <Text style={[styles.tabText, activeTab === 'doctors' && styles.activeTabText]}>
               Médicos
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'info' && styles.activeTab]}
+            onPress={() => setActiveTab('info')}
+          >
+            <Text style={[styles.tabText, activeTab === 'info' && styles.activeTabText]}>
+              Info
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -353,21 +388,7 @@ const ClinicDetail = ({ navigation, route }) => {
       </ScrollView>
 
       {/* Action Buttons */}
-      <View style={styles.actionButtons}>
-        <TouchableOpacity
-          style={styles.contactButton}
-          onPress={() => {}}
-        >
-          <Ionicons name="call-outline" size={20} color="#007AFF" />
-          <Text style={styles.contactButtonText}>Contactar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.bookButton}
-          onPress={() => {}}
-        >
-          <Text style={styles.bookButtonText}>Agendar cita</Text>
-        </TouchableOpacity>
-      </View>
+
     </SafeAreaView>
   );
 };
@@ -381,15 +402,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
   },
   backButton: {
     padding: 4,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1A1A1A',
   },
@@ -398,21 +419,22 @@ const styles = StyleSheet.create({
   },
   tabsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    paddingHorizontal: 8,
+    marginBottom: 16,
   },
   tab: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 8,
     alignItems: 'center',
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
+    marginHorizontal: 1,
   },
   activeTab: {
     borderBottomColor: '#007AFF',
   },
   tabText: {
-    fontSize: 16,
+    fontSize: 12,
     color: '#666',
     fontWeight: '500',
   },
@@ -420,46 +442,46 @@ const styles = StyleSheet.create({
     color: '#007AFF',
   },
   tabContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
+    paddingHorizontal: 16,
+    paddingBottom: 80,
   },
   clinicInfo: {
     flexDirection: 'row',
-    paddingVertical: 20,
+    paddingVertical: 16,
     backgroundColor: '#FFFFFF',
-    marginBottom: 20,
-    borderRadius: 12,
+    marginBottom: 16,
+    borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
   clinicImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 12,
-    marginRight: 16,
-    marginLeft: 16,
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginRight: 12,
+    marginLeft: 12,
   },
   clinicDetails: {
     flex: 1,
     justifyContent: 'center',
-    marginRight: 16,
+    marginRight: 12,
   },
   clinicName: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#1A1A1A',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   clinicAddress: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#666',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   ratingContainer: {
     flexDirection: 'row',
@@ -467,200 +489,359 @@ const styles = StyleSheet.create({
   },
   starsContainer: {
     flexDirection: 'row',
-    marginRight: 8,
+    marginRight: 6,
   },
   ratingText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: '#1A1A1A',
-    marginRight: 4,
+    marginRight: 3,
   },
   reviewsCount: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#666',
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1A1A1A',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   specialtiesContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
   },
+
   specialtyChip: {
-    backgroundColor: '#FF9500',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    backgroundColor: '#7B909E', // Un gris neutro, un poco más oscuro que el blanco
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 15,
+    borderBottomRightRadius: 15,
+    borderBottomLeftRadius: 15,
+    borderColor: '#C0C0C0',
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center', // Centra el contenido horizontalmente también
+    
+    // Sombra para el efecto de "luz" (arriba y a la izquierda)
+    shadowColor: '#fff',
+    shadowOffset: { width: -5, height: -5 },
+    shadowOpacity: 1,
+    shadowRadius: 10,
+    
+    // Sombra para el efecto de "oscuridad" (abajo y a la derecha)
+    // Esta sombra requiere un View o componente adicional en React Native para aplicarse
+    // Por simplicidad, se puede simular con una única sombra si es necesario
+    elevation: 10, // Sombra para Android
+  },
+
+
+  specialtyIcon: {
+    marginRight: 4,
   },
   specialtyText: {
-    fontSize: 14,
+    fontSize: 11,
     color: '#FFFFFF',
     fontWeight: '500',
+  },
+  specialtiesNote: {
+    fontSize: 11,
+    color: '#666',
+    fontStyle: 'italic',
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  specialtiesDescription: {
+    fontSize: 13,
+    color: '#666',
+    lineHeight: 20,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  specialtiesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  specialtyCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 10,
+    width: '48%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  specialtyIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFF5E6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  specialtyCardText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    textAlign: 'center',
+  },
+  specialtiesStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FF9500',
+    marginBottom: 2,
+  },
+  statLabel: {
+    fontSize: 10,
+    color: '#666',
+    textAlign: 'center',
+  },
+  doctorsVerticalContainer: {
+    gap: 12,
+  },
+  doctorVerticalCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  doctorVerticalImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginBottom: 8,
+    alignSelf: 'center',
+  },
+  doctorVerticalInfo: {
+    alignItems: 'center',
+  },
+  doctorVerticalName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: 2,
+    textAlign: 'center',
+  },
+  doctorVerticalSpecialty: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 2,
+    textAlign: 'center',
+  },
+  doctorVerticalExperience: {
+    fontSize: 10,
+    color: '#007AFF',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  doctorVerticalRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  doctorVerticalRatingText: {
+    fontSize: 10,
+    color: '#666',
+    marginLeft: 3,
   },
   doctorsScroll: {
     paddingLeft: 0,
   },
   doctorCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginRight: 16,
-    width: 160,
+    borderRadius: 8,
+    padding: 12,
+    marginRight: 12,
+    width: 140,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
   doctorImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginBottom: 12,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginBottom: 8,
   },
   doctorInfo: {
     flex: 1,
   },
   doctorName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: '#1A1A1A',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   doctorSpecialty: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#666',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   doctorExperience: {
-    fontSize: 12,
+    fontSize: 10,
     color: '#007AFF',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   doctorRating: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   doctorRatingText: {
-    fontSize: 12,
+    fontSize: 10,
     color: '#666',
-    marginLeft: 4,
+    marginLeft: 3,
   },
   actionsContainer: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
   },
   actionCard: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: 8,
+    padding: 16,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
   actionTitle: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '600',
     color: '#1A1A1A',
-    marginTop: 12,
-    marginBottom: 4,
+    marginTop: 8,
+    marginBottom: 2,
     textAlign: 'center',
   },
   actionDescription: {
-    fontSize: 12,
+    fontSize: 10,
     color: '#666',
     textAlign: 'center',
   },
   descriptionText: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#666',
-    lineHeight: 22,
+    lineHeight: 20,
   },
   servicesContainer: {
-    marginTop: 8,
+    marginTop: 6,
   },
   serviceItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   serviceText: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#666',
-    marginLeft: 8,
+    marginLeft: 6,
   },
   scheduleContainer: {
-    marginTop: 8,
+    marginTop: 6,
   },
   scheduleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   scheduleDay: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#1A1A1A',
     fontWeight: '500',
   },
   scheduleTime: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#666',
   },
   reviewCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 10,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
   reviewHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   reviewPatient: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: '#1A1A1A',
   },
   reviewDate: {
-    fontSize: 12,
+    fontSize: 10,
     color: '#666',
   },
   reviewStars: {
     flexDirection: 'row',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   reviewComment: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#666',
-    lineHeight: 20,
+    lineHeight: 18,
   },
   actionButtons: {
     position: 'absolute',
@@ -668,8 +849,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#F0F0F0',
@@ -679,31 +860,82 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: '#007AFF',
-    borderRadius: 8,
-    marginRight: 8,
+    borderRadius: 6,
+    marginRight: 6,
   },
   contactButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#007AFF',
     fontWeight: '600',
-    marginLeft: 8,
+    marginLeft: 6,
   },
   bookButton: {
     flex: 2,
     backgroundColor: '#007AFF',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 6,
     alignItems: 'center',
   },
   bookButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+  doctorHorizontalCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  doctorHorizontalImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 12,
+  },
+  doctorHorizontalInfo: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  doctorHorizontalName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: 2,
+  },
+  doctorHorizontalSpecialty: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 2,
+  },
+  doctorHorizontalExperience: {
+    fontSize: 10,
+    color: '#007AFF',
+    marginBottom: 6,
+  },
+  doctorHorizontalRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  doctorHorizontalRatingText: {
+    fontSize: 10,
+    color: '#666',
+    marginLeft: 3,
   },
 });
 

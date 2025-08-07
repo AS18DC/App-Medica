@@ -290,19 +290,11 @@ const DoctorDayView = ({ navigation, route }) => {
                   style={[styles.toggleButton, dayAvailable ? styles.toggleButtonActive : styles.toggleButtonInactive]}
                   onPress={handleToggleAvailability}
                 >
-                  <Text style={[styles.toggleButtonText, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
+                  <Text style={[styles.toggleButtonText, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
                     {dayAvailable ? 'Día disponible' : 'Día no disponible'}
                   </Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.removeDayButton}
-                  onPress={handleRemoveDayAvailability}
-                >
-                  <Ionicons name="trash-outline" size={16} color="#FF3B30" />
-                  <Text style={[styles.removeDayButtonText, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
-                    Eliminar día
-                  </Text>
-                </TouchableOpacity>
+
               </View>
             </View>
             
@@ -311,7 +303,7 @@ const DoctorDayView = ({ navigation, route }) => {
                 <Text style={[styles.summaryStatNumber, { fontSize: getResponsiveFontSize(20, 22, 24) }]}>
                   {availableSlots}
                 </Text>
-                <Text style={[styles.summaryStatLabel, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
+                <Text style={[styles.summaryStatLabel, { fontSize: getResponsiveFontSize(8, 9, 10) }]}>
                   Horas disponibles
                 </Text>
               </View>
@@ -319,7 +311,7 @@ const DoctorDayView = ({ navigation, route }) => {
                 <Text style={[styles.summaryStatNumber, { fontSize: getResponsiveFontSize(20, 22, 24) }]}>
                   {appointmentSlots}
                 </Text>
-                <Text style={[styles.summaryStatLabel, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
+                <Text style={[styles.summaryStatLabel, { fontSize: getResponsiveFontSize(8, 9, 10) }]}>
                   Citas programadas
                 </Text>
               </View>
@@ -327,7 +319,7 @@ const DoctorDayView = ({ navigation, route }) => {
                 <Text style={[styles.summaryStatNumber, { fontSize: getResponsiveFontSize(20, 22, 24) }]}>
                   {unavailableSlots}
                 </Text>
-                <Text style={[styles.summaryStatLabel, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
+                <Text style={[styles.summaryStatLabel, { fontSize: getResponsiveFontSize(8, 9, 10) }]}>
                   Horas no disponibles
                 </Text>
               </View>
