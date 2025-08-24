@@ -46,13 +46,14 @@ const chatReducer = (state, action) => {
                 lastMessage: message.text,
                 timestamp: message.timestamp,
                 unreadCount: conv.unreadCount + (message.sender === 'doctor' ? 1 : 0),
+                messages: [...(conv.messages || []), message],
               }
             : conv
         ),
         activeConversation: state.activeConversation?.id === conversationId
           ? {
               ...state.activeConversation,
-              messages: [...state.activeConversation.messages, message],
+              messages: [...(state.activeConversation.messages || []), message],
             }
           : state.activeConversation,
       };
@@ -82,6 +83,29 @@ const chatReducer = (state, action) => {
         conversations: state.conversations.map(conv =>
           conv.id === action.payload ? { ...conv, unreadCount: 0 } : conv
         ),
+      };
+    case 'UPDATE_MESSAGE_STATUS':
+      const { conversationId: updateConvId, messageId, status } = action.payload;
+      return {
+        ...state,
+        conversations: state.conversations.map(conv =>
+          conv.id === updateConvId
+            ? {
+                ...conv,
+                messages: (conv.messages || []).map(msg =>
+                  msg.id === messageId ? { ...msg, status } : msg
+                ),
+              }
+            : conv
+        ),
+        activeConversation: state.activeConversation?.id === updateConvId
+          ? {
+              ...state.activeConversation,
+              messages: (state.activeConversation.messages || []).map(msg =>
+                msg.id === messageId ? { ...msg, status } : msg
+              ),
+            }
+          : state.activeConversation,
       };
     default:
       return state;
@@ -202,14 +226,11 @@ export const ChatProvider = ({ children }) => {
       // Simular envío exitoso
       setTimeout(() => {
         dispatch({
-          type: 'UPDATE_CONVERSATION',
+          type: 'UPDATE_MESSAGE_STATUS',
           payload: {
-            id: conversationId,
-            messages: state.conversations
-              .find(conv => conv.id === conversationId)
-              ?.messages.map(msg => 
-                msg.id === message.id ? { ...msg, status: 'sent' } : msg
-              ) || [],
+            conversationId,
+            messageId: message.id,
+            status: 'sent',
           },
         });
       }, 1000);

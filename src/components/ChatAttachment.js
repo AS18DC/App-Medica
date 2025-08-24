@@ -3,6 +3,11 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 const ChatAttachment = ({ attachment, onPress, style }) => {
+  // Verificación de seguridad
+  if (!attachment || !attachment.type) {
+    return null;
+  }
+
   const getFileIcon = (type) => {
     switch (type) {
       case 'image':
@@ -41,7 +46,7 @@ const ChatAttachment = ({ attachment, onPress, style }) => {
     if (attachment.type === 'image') {
       return (
         <TouchableOpacity style={[styles.imageContainer, style]} onPress={onPress}>
-          <Image source={{ uri: attachment.url }} style={styles.image} />
+          <Image source={{ uri: attachment.url || '' }} style={styles.image} />
           <View style={styles.imageOverlay}>
             <Ionicons name="expand" size={20} color="#FFF" />
           </View>
@@ -56,9 +61,9 @@ const ChatAttachment = ({ attachment, onPress, style }) => {
         </View>
         <View style={styles.fileInfo}>
           <Text style={styles.fileName} numberOfLines={1}>
-            {attachment.name}
+            {attachment.name || 'Archivo'}
           </Text>
-          <Text style={styles.fileSize}>{attachment.size}</Text>
+          <Text style={styles.fileSize}>{attachment.size || ''}</Text>
         </View>
         <Ionicons name="download" size={20} color="#007AFF" />
       </TouchableOpacity>

@@ -34,26 +34,26 @@ const ChatScreen = ({ navigation, route }) => {
   const scrollViewRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Encontrar la conversación actual
-  const currentConversation = conversations.find(conv => conv.id === conversationId) || activeConversation;
+  // Encontrar la conversación actual con verificación de seguridad
+  const currentConversation = conversations ? conversations.find(conv => conv.id === conversationId) || activeConversation : activeConversation;
 
   useEffect(() => {
-    if (currentConversation) {
+    if (currentConversation && conversationId) {
       setActiveConversation(currentConversation);
       markAsRead(conversationId);
     }
-  }, [conversationId, currentConversation]);
+  }, [conversationId]);
+
+  const messages = currentConversation?.messages || [];
 
   useEffect(() => {
     // Scroll al final cuando lleguen nuevos mensajes
-    if (scrollViewRef.current) {
+    if (scrollViewRef.current && messages && messages.length > 0) {
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 100);
     }
-  }, [currentConversation?.messages]);
-
-  const messages = currentConversation?.messages || [];
+  }, [messages.length]);
 
   const handleSendMessage = () => {
     if (message.trim() && conversationId) {
@@ -136,8 +136,8 @@ const ChatScreen = ({ navigation, route }) => {
             <Ionicons name="arrow-back" size={24} color="#1A1A1A" />
           </TouchableOpacity>
           <View style={styles.headerInfo}>
-            <Text style={styles.doctorName}>{doctor.name}</Text>
-            <Text style={styles.doctorSpecialty}>{doctor.specialty}</Text>
+            <Text style={styles.doctorName}>{doctor?.name || 'Doctor'}</Text>
+            <Text style={styles.doctorSpecialty}>{doctor?.specialty || 'Especialidad'}</Text>
           </View>
           <TouchableOpacity style={styles.moreButton}>
             <Ionicons name="ellipsis-vertical" size={20} color="#666" />

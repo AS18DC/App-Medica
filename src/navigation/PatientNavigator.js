@@ -2,6 +2,8 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
+import { useChat } from '../context/ChatContext';
+import UnreadBadge from '../components/UnreadBadge';
 
 // Import patient screens
 import PatientHome from '../screens/patient/PatientHome';
@@ -67,6 +69,11 @@ const PatientPrescriptionsStack = () => (
 );
 
 const PatientNavigator = () => {
+  const { conversations } = useChat();
+  
+  // Calcular el total de mensajes no leídos con verificación de seguridad
+  const totalUnreadCount = conversations ? conversations.reduce((total, conv) => total + conv.unreadCount, 0) : 0;
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -87,7 +94,19 @@ const PatientNavigator = () => {
             iconName = focused ? 'person' : 'person-outline';
           }
 
-          return <Ionicons name={iconName} size={size} color={color} />;
+          const icon = <Ionicons name={iconName} size={size} color={color} />;
+
+          // Mostrar badge solo en el tab de Chat
+          if (route.name === 'Chat' && totalUnreadCount > 0) {
+            return (
+              <React.Fragment>
+                {icon}
+                <UnreadBadge count={totalUnreadCount} />
+              </React.Fragment>
+            );
+          }
+
+          return icon;
         },
         tabBarActiveTintColor: '#007AFF',
         tabBarInactiveTintColor: 'gray',

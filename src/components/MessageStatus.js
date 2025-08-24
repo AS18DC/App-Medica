@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 const MessageStatus = ({ status, style }) => {
   const getStatusIcon = () => {
-    switch (status) {
+    switch (status || 'sending') {
       case 'sending':
         return { name: 'time-outline', color: '#999' };
       case 'sent':

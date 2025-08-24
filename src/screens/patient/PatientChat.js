@@ -27,8 +27,8 @@ const PatientChat = ({ navigation }) => {
     }, 1000);
   }, []);
 
-  // Usar las conversaciones del contexto
-  const chatConversations = conversations;
+  // Usar las conversaciones del contexto con verificación de seguridad
+  const chatConversations = conversations || [];
 
   const handleNewChat = (doctor) => {
     // Crear nueva conversación
@@ -74,8 +74,11 @@ const PatientChat = ({ navigation }) => {
     >
       <View style={styles.chatHeader}>
         <View style={styles.doctorImageContainer}>
-          <Image source={{ uri: conversation.doctor.image }} style={styles.doctorImage} />
-          {conversation.doctor.isOnline && (
+          <Image 
+            source={{ uri: conversation.doctor?.image || 'https://via.placeholder.com/150' }} 
+            style={styles.doctorImage} 
+          />
+          {conversation.doctor?.isOnline && (
             <View style={styles.onlineIndicator} />
           )}
           {conversation.unreadCount > 0 && (
@@ -89,24 +92,26 @@ const PatientChat = ({ navigation }) => {
         <View style={styles.chatInfo}>
           <View style={styles.chatHeaderTop}>
             <Text style={[styles.doctorName, { fontSize: getResponsiveFontSize(16, 17, 18) }]}>
-              {conversation.doctor.name}
+              {conversation.doctor?.name || 'Doctor'}
             </Text>
             <Text style={[styles.timestamp, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
-              {conversation.timestamp}
+              {conversation.timestamp || 'Ahora'}
             </Text>
           </View>
           <Text style={[styles.doctorSpecialty, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-            {conversation.doctor.specialty}
+            {conversation.doctor?.specialty || 'Especialidad'}
           </Text>
           <Text style={[styles.lastMessage, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-            {conversation.lastMessage}
+            {conversation.lastMessage || 'Sin mensajes'}
           </Text>
-          <View style={styles.appointmentInfo}>
-            <Ionicons name="calendar" size={getResponsiveFontSize(12, 13, 14)} color="#007AFF" />
-            <Text style={[styles.appointmentText, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
-              Cita: {conversation.appointmentDate} a las {conversation.appointmentTime}
-            </Text>
-          </View>
+          {conversation.appointmentDate && conversation.appointmentTime && (
+            <View style={styles.appointmentInfo}>
+              <Ionicons name="calendar" size={getResponsiveFontSize(12, 13, 14)} color="#007AFF" />
+              <Text style={[styles.appointmentText, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
+                Cita: {conversation.appointmentDate} a las {conversation.appointmentTime}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
     </TouchableOpacity>

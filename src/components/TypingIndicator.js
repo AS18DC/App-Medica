@@ -45,7 +45,7 @@ const TypingIndicator = ({ isTyping, doctorName }) => {
             <Ionicons name="ellipse" size={8} color="#999" />
           </Animated.View>
         </View>
-        <Text style={styles.typingText}>{doctorName} está escribiendo...</Text>
+        <Text style={styles.typingText}>{doctorName || 'Doctor'} está escribiendo...</Text>
       </View>
     </View>
   );
