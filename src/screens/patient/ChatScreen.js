@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,56 +9,71 @@ import {
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useChat } from '../../context/ChatContext';
+import MessageStatus from '../../components/MessageStatus';
+import TypingIndicator from '../../components/TypingIndicator';
+import ChatAttachment from '../../components/ChatAttachment';
+import { isWeb, getResponsiveFontSize, getResponsivePadding } from '../../utils/responsive';
 
 const ChatScreen = ({ navigation, route }) => {
-  const { doctor } = route.params;
+  const { doctor, conversationId } = route.params;
+  const { 
+    conversations, 
+    activeConversation, 
+    sendMessage, 
+    markAsRead, 
+    setActiveConversation,
+    isTyping 
+  } = useChat();
+  
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      text: 'Hola Maria, ¿cómo te sientes hoy?',
-      sender: 'doctor',
-      timestamp: '10:30 AM',
-    },
-    {
-      id: 2,
-      text: 'Hola doctora, me siento mejor. ¿Puedo hacer ejercicio?',
-      sender: 'patient',
-      timestamp: '10:32 AM',
-    },
-    {
-      id: 3,
-      text: 'Sí, puedes hacer ejercicio ligero. Evita actividades intensas por ahora.',
-      sender: 'doctor',
-      timestamp: '10:35 AM',
-    },
-    {
-      id: 4,
-      text: 'Perfecto, gracias doctora. ¿Cuándo debo volver para el seguimiento?',
-      sender: 'patient',
-      timestamp: '10:37 AM',
-    },
-    {
-      id: 5,
-      text: 'Te recomiendo que vengas en 2 semanas para una revisión completa.',
-      sender: 'doctor',
-      timestamp: '10:40 AM',
-    },
-  ]);
+  const [isAttaching, setIsAttaching] = useState(false);
+  const scrollViewRef = useRef(null);
+  const inputRef = useRef(null);
 
-  const sendMessage = () => {
-    if (message.trim()) {
-      const newMessage = {
-        id: messages.length + 1,
-        text: message.trim(),
-        sender: 'patient',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages([...messages, newMessage]);
-      setMessage('');
+  // Encontrar la conversación actual
+  const currentConversation = conversations.find(conv => conv.id === conversationId) || activeConversation;
+
+  useEffect(() => {
+    if (currentConversation) {
+      setActiveConversation(currentConversation);
+      markAsRead(conversationId);
     }
+  }, [conversationId, currentConversation]);
+
+  useEffect(() => {
+    // Scroll al final cuando lleguen nuevos mensajes
+    if (scrollViewRef.current) {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  }, [currentConversation?.messages]);
+
+  const messages = currentConversation?.messages || [];
+
+  const handleSendMessage = () => {
+    if (message.trim() && conversationId) {
+      sendMessage(conversationId, message.trim());
+      setMessage('');
+      inputRef.current?.focus();
+    }
+  };
+
+  const handleAttachment = () => {
+    Alert.alert(
+      'Adjuntar archivo',
+      'Selecciona el tipo de archivo',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Imagen', onPress: () => console.log('Adjuntar imagen') },
+        { text: 'Documento', onPress: () => console.log('Adjuntar documento') },
+        { text: 'Cámara', onPress: () => console.log('Tomar foto') },
+      ]
+    );
   };
 
   const renderMessage = (msg) => (
@@ -75,22 +90,36 @@ const ChatScreen = ({ navigation, route }) => {
           msg.sender === 'patient' ? styles.patientBubble : styles.doctorBubble,
         ]}
       >
-        <Text
-          style={[
-            styles.messageText,
-            msg.sender === 'patient' ? styles.patientText : styles.doctorText,
-          ]}
-        >
-          {msg.text}
-        </Text>
-        <Text
-          style={[
-            styles.timestamp,
-            msg.sender === 'patient' ? styles.patientTimestamp : styles.doctorTimestamp,
-          ]}
-        >
-          {msg.timestamp}
-        </Text>
+        {msg.attachment && (
+          <ChatAttachment 
+            attachment={msg.attachment} 
+            onPress={() => console.log('Abrir archivo:', msg.attachment)}
+            style={styles.attachment}
+          />
+        )}
+        {msg.text && (
+          <Text
+            style={[
+              styles.messageText,
+              msg.sender === 'patient' ? styles.patientText : styles.doctorText,
+            ]}
+          >
+            {msg.text}
+          </Text>
+        )}
+        <View style={styles.messageFooter}>
+          <Text
+            style={[
+              styles.timestamp,
+              msg.sender === 'patient' ? styles.patientTimestamp : styles.doctorTimestamp,
+            ]}
+          >
+            {msg.timestamp}
+          </Text>
+          {msg.sender === 'patient' && (
+            <MessageStatus status={msg.status} />
+          )}
+        </View>
       </View>
     </View>
   );
@@ -117,27 +146,34 @@ const ChatScreen = ({ navigation, route }) => {
 
         {/* Messages */}
         <ScrollView
+          ref={scrollViewRef}
           style={styles.messagesContainer}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.messagesContent}
         >
           {messages.map(renderMessage)}
+          <TypingIndicator isTyping={isTyping} doctorName={doctor?.name} />
         </ScrollView>
 
         {/* Message Input */}
         <View style={styles.inputContainer}>
           <View style={styles.inputWrapper}>
+            <TouchableOpacity style={styles.attachButton} onPress={handleAttachment}>
+              <Ionicons name="add-circle-outline" size={24} color="#007AFF" />
+            </TouchableOpacity>
             <TextInput
+              ref={inputRef}
               style={styles.textInput}
               placeholder="Escribe un mensaje..."
               value={message}
               onChangeText={setMessage}
               multiline
               maxLength={500}
+              onSubmitEditing={handleSendMessage}
             />
             <TouchableOpacity
               style={[styles.sendButton, !message.trim() && styles.sendButtonDisabled]}
-              onPress={sendMessage}
+              onPress={handleSendMessage}
               disabled={!message.trim()}
             >
               <Ionicons
@@ -260,8 +296,12 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     backgroundColor: '#F8F9FA',
     borderRadius: 24,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 8,
+  },
+  attachButton: {
+    padding: 8,
+    marginRight: 4,
   },
   textInput: {
     flex: 1,
@@ -269,13 +309,23 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     maxHeight: 100,
     paddingVertical: 8,
+    paddingHorizontal: 8,
   },
   sendButton: {
     padding: 8,
-    marginLeft: 8,
+    marginLeft: 4,
   },
   sendButtonDisabled: {
     opacity: 0.5,
+  },
+  messageFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: 4,
+  },
+  attachment: {
+    marginBottom: 8,
   },
 });
 

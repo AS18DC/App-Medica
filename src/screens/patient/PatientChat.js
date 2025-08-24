@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,56 +7,52 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Image,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useChat } from '../../context/ChatContext';
+import NewChatModal from '../../components/NewChatModal';
 import { isWeb, isMobileScreen, isTabletScreen, isDesktopScreen, webStyles, getResponsiveSpacing, getResponsiveFontSize, getResponsivePadding, webClasses } from '../../utils/responsive';
 
 const PatientChat = ({ navigation }) => {
-  // Mock data for chat conversations
-  const [chatConversations] = useState([
-    {
-      id: 1,
+  const { conversations, markAsRead, dispatch } = useChat();
+  const [refreshing, setRefreshing] = useState(false);
+  const [showNewChatModal, setShowNewChatModal] = useState(false);
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    // Simular actualización de datos
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  }, []);
+
+  // Usar las conversaciones del contexto
+  const chatConversations = conversations;
+
+  const handleNewChat = (doctor) => {
+    // Crear nueva conversación
+    const newConversation = {
+      id: Date.now(),
       doctor: {
-        id: 1,
-        name: 'Dr. Sofia Ramirez',
-        specialty: 'Cardiología',
-        image: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop&crop=face',
+        ...doctor,
+        isOnline: doctor.isOnline || false,
       },
-      lastMessage: 'Perfecto, nos vemos mañana a las 10:00 AM',
-      timestamp: '10:30 AM',
-      unreadCount: 2,
-      appointmentDate: '2024-07-15',
-      appointmentTime: '10:00 AM',
-    },
-    {
-      id: 2,
-      doctor: {
-        id: 2,
-        name: 'Dr. Carlos Mendoza',
-        specialty: 'Dermatología',
-        image: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&h=150&fit=crop&crop=face',
-      },
-      lastMessage: '¿Cómo te sientes después del tratamiento?',
-      timestamp: 'Ayer',
+      lastMessage: '',
+      timestamp: 'Ahora',
       unreadCount: 0,
-      appointmentDate: '2024-07-10',
-      appointmentTime: '2:30 PM',
-    },
-    {
-      id: 3,
-      doctor: {
-        id: 3,
-        name: 'Dr. Ana Torres',
-        specialty: 'Pediatría',
-        image: 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=150&h=150&fit=crop&crop=face',
-      },
-      lastMessage: 'Recuerda tomar la medicación antes de dormir',
-      timestamp: 'Lun',
-      unreadCount: 1,
-      appointmentDate: '2024-07-08',
-      appointmentTime: '9:00 AM',
-    },
-  ]);
+      messages: [],
+    };
+
+    dispatch({ type: 'ADD_CONVERSATION', payload: newConversation });
+    setShowNewChatModal(false);
+    
+    // Navegar al chat
+    navigation.navigate('ChatScreen', {
+      doctor: newConversation.doctor,
+      conversationId: newConversation.id,
+    });
+  };
 
   const handleChatPress = (conversation) => {
     navigation.navigate('ChatScreen', {
@@ -65,7 +61,7 @@ const PatientChat = ({ navigation }) => {
     });
   };
 
-  const renderChatItem = (conversation) => (
+    const renderChatItem = (conversation) => (
     <TouchableOpacity
       key={conversation.id}
       style={[
@@ -79,6 +75,9 @@ const PatientChat = ({ navigation }) => {
       <View style={styles.chatHeader}>
         <View style={styles.doctorImageContainer}>
           <Image source={{ uri: conversation.doctor.image }} style={styles.doctorImage} />
+          {conversation.doctor.isOnline && (
+            <View style={styles.onlineIndicator} />
+          )}
           {conversation.unreadCount > 0 && (
             <View style={styles.unreadBadge}>
               <Text style={[styles.unreadCount, { fontSize: getResponsiveFontSize(10, 11, 12) }]}>
@@ -128,7 +127,12 @@ const PatientChat = ({ navigation }) => {
             <Text style={[styles.title, { fontSize: getResponsiveFontSize(28, 30, 32) }]}>
               Chats
             </Text>
-            <View style={styles.headerRight} />
+            <TouchableOpacity
+              style={styles.newChatButton}
+              onPress={() => setShowNewChatModal(true)}
+            >
+              <Ionicons name="add" size={getResponsiveFontSize(24, 26, 28)} color="#007AFF" />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -136,6 +140,9 @@ const PatientChat = ({ navigation }) => {
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         >
           {isWeb ? (
             <View style={styles.webGrid}>
@@ -164,6 +171,13 @@ const PatientChat = ({ navigation }) => {
           )}
         </ScrollView>
       </View>
+
+      {/* New Chat Modal */}
+      <NewChatModal
+        visible={showNewChatModal}
+        onClose={() => setShowNewChatModal(false)}
+        onSelectDoctor={handleNewChat}
+      />
     </SafeAreaView>
   );
 };
@@ -194,8 +208,8 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
   },
-  headerRight: {
-    width: 40,
+  newChatButton: {
+    padding: 8,
   },
   scrollView: {
     flex: 1,
@@ -245,6 +259,17 @@ const styles = StyleSheet.create({
     width: getResponsiveSpacing(60, 70, 80),
     height: getResponsiveSpacing(60, 70, 80),
     borderRadius: getResponsiveSpacing(30, 35, 40),
+  },
+  onlineIndicator: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#4CAF50',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
   unreadBadge: {
     position: 'absolute',
