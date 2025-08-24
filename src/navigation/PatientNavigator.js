@@ -8,6 +8,7 @@ import PatientHome from '../screens/patient/PatientHome';
 import PatientClinics from '../screens/patient/PatientClinics';
 import PatientAppointments from '../screens/patient/PatientAppointments';
 import PatientProfile from '../screens/patient/PatientProfile';
+import EditPatientProfile from '../screens/patient/EditPatientProfile';
 import PatientChat from '../screens/patient/PatientChat';
 import PatientPrescriptions from '../screens/patient/PatientPrescriptions';
 import DoctorDetail from '../screens/patient/DoctorDetail';
@@ -57,6 +58,8 @@ const PatientAppointmentsStack = () => (
 const PatientProfileStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="PatientProfileMain" component={PatientProfile} />
+    <Stack.Screen name="EditPatientProfile" component={EditPatientProfile} />
+    <Stack.Screen name="PatientAppointmentsMain" component={PatientAppointments} />
   </Stack.Navigator>
 );
 

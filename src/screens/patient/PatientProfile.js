@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,28 +10,42 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const PatientProfile = ({ navigation }) => {
+const PatientProfile = ({ navigation, route }) => {
   // Mock user data
-  const user = {
+  const [user, setUser] = useState({
     name: 'Maria González',
     email: 'maria.gonzalez@email.com',
-    phone: '+34 612 345 678',
+    phone: '+58 412 345 6789',
+    city: 'Caracas',
+    birthDate: '15/03/1990',
+    gender: 'Femenino',
+    height: '165',
+    weight: '58',
     membershipDate: 'Enero 2024',
-    image: 'https://via.placeholder.com/100',
-  };
+    image: "https://media.istockphoto.com/id/1437816897/photo/business-woman-manager-or-human-resources-portrait-for-career-success-company-we-are-hiring.jpg?s=612x612&w=0&k=20&c=tyLvtzutRh22j9GqSGI33Z4HpIwv9vL_MZw_xOE19NQ="
+  });
+
+  // Verificar si hay datos actualizados desde la pantalla de edición
+  useEffect(() => {
+    if (route.params?.updatedUser) {
+      setUser(route.params.updatedUser);
+      // Limpiar los parámetros para evitar actualizaciones no deseadas
+      navigation.setParams({ updatedUser: undefined });
+    }
+  }, [route.params?.updatedUser, navigation]);
 
   const menuItems = [
     {
       id: 1,
       title: 'Citas próximas',
       icon: 'calendar-outline',
-      action: () => navigation.navigate('Appointments'),
+      action: () => navigation.navigate('PatientAppointmentsMain'),
     },
     {
       id: 2,
       title: 'Historial de citas',
       icon: 'time-outline',
-      action: () => navigation.navigate('Appointments'),
+      action: () => navigation.navigate('PatientAppointmentsMain'),
     },
     {
       id: 3,
@@ -137,7 +151,10 @@ const PatientProfile = ({ navigation }) => {
               </Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.editButton}>
+          <TouchableOpacity 
+            style={styles.editButton}
+            onPress={() => navigation.navigate('EditPatientProfile', { userData: user })}
+          >
             <Ionicons name="pencil" size={20} color="#007AFF" />
             <Text style={styles.editButtonText}>Editar</Text>
           </TouchableOpacity>
@@ -151,14 +168,34 @@ const PatientProfile = ({ navigation }) => {
               <Ionicons name="mail-outline" size={20} color="#666" />
               <Text style={styles.infoText}>{user.email}</Text>
             </View>
-            <View style={styles.infoRow}>
-              <Ionicons name="call-outline" size={20} color="#666" />
-              <Text style={styles.infoText}>{user.phone}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Ionicons name="calendar-outline" size={20} color="#666" />
-              <Text style={styles.infoText}>Miembro desde {user.membershipDate}</Text>
-            </View>
+                         <View style={styles.infoRow}>
+               <Ionicons name="call-outline" size={20} color="#666" />
+               <Text style={styles.infoText}>{user.phone}</Text>
+             </View>
+             <View style={styles.infoRow}>
+               <Ionicons name="location-outline" size={20} color="#666" />
+               <Text style={styles.infoText}>{user.city}</Text>
+             </View>
+             <View style={styles.infoRow}>
+               <Ionicons name="calendar-outline" size={20} color="#666" />
+               <Text style={styles.infoText}>Fecha de nacimiento: {user.birthDate}</Text>
+             </View>
+             <View style={styles.infoRow}>
+               <Ionicons name="person-outline" size={20} color="#666" />
+               <Text style={styles.infoText}>Sexo: {user.gender}</Text>
+             </View>
+             <View style={styles.infoRow}>
+               <Ionicons name="resize-outline" size={20} color="#666" />
+               <Text style={styles.infoText}>Altura: {user.height} cm</Text>
+             </View>
+             <View style={styles.infoRow}>
+               <Ionicons name="scale-outline" size={20} color="#666" />
+               <Text style={styles.infoText}>Peso: {user.weight} kg</Text>
+             </View>
+             <View style={styles.infoRow}>
+               <Ionicons name="calendar-outline" size={20} color="#666" />
+               <Text style={styles.infoText}>Miembro desde {user.membershipDate}</Text>
+             </View>
           </View>
         </View>
 
