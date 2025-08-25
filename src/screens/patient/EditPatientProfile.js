@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,28 +7,18 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Image,
-  TextInput,
-  Alert,
-  FlatList,
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { isWeb, webStyles, getResponsiveLayout } from "../../utils/responsive";
+import { isWeb, webStyles } from "../../utils/responsive";
+import { usePatientProfile } from "../../context/PatientProfileContext";
+import { formatDateForDisplay } from "../../utils/dateUtils";
 
-const { width: screenWidth } = Dimensions.get('window');
 
 const EditPatientProfile = ({ navigation, route }) => {
-  // Obtener los datos del usuario desde la navegación o usar datos por defecto
-  const userData = route.params?.userData || {
-    name: "Maria González",
-    email: "maria.gonzalez@email.com",
-    phone: "+34 612345678",
-    membershipDate: "Enero 2024",
-    image: "https://media.istockphoto.com/id/1437816897/photo/business-woman-manager-or-human-resources-portrait-for-career-success-company-we-are-hiring.jpg?s=612x612&w=0&k=20&c=tyLvtzutRh22j9GqSGI33Z4HpIwv9vL_MZw_xOE19NQ="
-  };
+  // Obtener los datos del usuario desde el contexto
+  const { patientProfile, updateProfileField } = usePatientProfile();
 
-  // Referencia para el FlatList
-  const flatListRef = useRef(null);
 
   // Separar el teléfono en código de área y número
   const parsePhoneNumber = (phoneString) => {
@@ -53,548 +43,265 @@ const EditPatientProfile = ({ navigation, route }) => {
     'Porlamar', 'Puerto Ayacucho', 'San Juan de los Morros', 'Tucupita'
   ];
 
-  // Estado para los datos en edición
+  // Estado para los datos en edición - usar datos del contexto
   const [editingUser, setEditingUser] = useState({
-    ...userData,
-    ...parsePhoneNumber(userData.phone),
-    city: userData.city || 'Caracas',
-    birthDate: userData.birthDate || '',
-    gender: userData.gender || '',
-    height: userData.height || '',
-    weight: userData.weight || ''
+    ...patientProfile,
+    ...parsePhoneNumber(patientProfile.phone)
   });
 
-  // Estado para validaciones en tiempo real
-  const [errors, setErrors] = useState({});
-  
-  // Estado para controlar el dropdown de ciudades
-  const [showCityDropdown, setShowCityDropdown] = useState(false);
-
-  // Estado para el índice actual del carrusel
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  // Validar campos al cargar la pantalla
+  // Sincronizar el estado local cuando cambie el contexto
   useEffect(() => {
-    const initialErrors = {};
-    Object.keys(editingUser).forEach((field) => {
-      if (
-        field !== "membershipDate" &&
-        field !== "image" &&
-        field !== "phone"
-      ) {
-        const validation = validateField(field, editingUser[field]);
-        if (!validation.isValid) {
-          initialErrors[field] = validation.errorMessage;
-        }
-      }
+    setEditingUser({
+      ...patientProfile,
+      ...parsePhoneNumber(patientProfile.phone)
     });
-    setErrors(initialErrors);
-  }, []);
+  }, [patientProfile]);
 
-  // Cerrar dropdown de ciudades cuando se toque fuera
-  useEffect(() => {
-    const handleTouchOutside = () => {
-      if (showCityDropdown) {
-        setShowCityDropdown(false);
+  // Función para manejar la edición de un campo
+  const handleEditField = (field) => {
+    // Navegar a la pantalla de edición correspondiente
+    const fieldConfig = getFieldConfig(field);
+    
+    if (fieldConfig.type === 'phone') {
+      navigation.navigate('EditPhoneScreen', {
+        field,
+        label: fieldConfig.label,
+        currentValue: editingUser[field],
+        validationRules: fieldConfig.validationRules,
+        onSave: handleFieldSave
+      });
+    } else if (fieldConfig.type === 'date') {
+      navigation.navigate('EditDateScreen', {
+        field,
+        label: fieldConfig.label,
+        currentValue: editingUser[field],
+        validationRules: fieldConfig.validationRules,
+        onSave: handleFieldSave
+      });
+    } else if (fieldConfig.type === 'selection') {
+      navigation.navigate('EditSelectionScreen', {
+        field,
+        label: fieldConfig.label,
+        currentValue: editingUser[field],
+        options: fieldConfig.options,
+        validationRules: fieldConfig.validationRules,
+        allowOther: fieldConfig.allowOther || false,
+        onSave: handleFieldSave
+      });
+    } else {
+      navigation.navigate('EditFieldScreen', {
+        field,
+        label: fieldConfig.label,
+        currentValue: editingUser[field],
+        placeholder: fieldConfig.placeholder,
+        keyboardType: fieldConfig.keyboardType,
+        maxLength: fieldConfig.maxLength,
+        validationRules: fieldConfig.validationRules,
+        onSave: handleFieldSave
+      });
+    }
+  };
+
+  // Función para guardar cambios de un campo individual
+  const handleFieldSave = (field, value) => {
+    // Actualizar el estado local
+    setEditingUser(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    
+    // Actualizar el contexto global
+    updateProfileField(field, value);
+  };
+
+  // Configuración de campos
+  const getFieldConfig = (field) => {
+    const configs = {
+      name: {
+        type: 'input',
+        label: 'Nombre completo',
+        placeholder: 'Ingresa tu nombre completo',
+        keyboardType: 'default',
+        maxLength: 30,
+        validationRules: {
+          required: true,
+          maxLength: 30,
+          pattern: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
+          errorMessage: 'El nombre solo puede contener letras y espacios',
+          info: 'Ingresa tus nombres y apellidos. Solo se permiten letras y espacios.'
+        }
+      },
+      email: {
+        type: 'input',
+        label: 'Email',
+        placeholder: 'Ingresa tu email',
+        keyboardType: 'email-address',
+        validationRules: {
+          required: true,
+          pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+          errorMessage: 'Ingresa un email válido',
+          info: 'El email debe tener un formato válido (ejemplo@dominio.com). Este será usado para comunicaciones importantes.'
+        }
+      },
+      phone: {
+        type: 'phone',
+        label: 'Teléfono',
+        validationRules: {
+          required: true
+        }
+      },
+      city: {
+        type: 'selection',
+        label: 'Ciudad',
+        options: venezuelanCities.map(city => ({
+          value: city,
+          label: city
+        })),
+        validationRules: {
+          required: true,
+          info: 'Selecciona la ciudad donde resides actualmente. Esta información es importante para coordinar citas y servicios médicos.'
+        },
+        allowOther: true
+      },
+      birthDate: {
+        type: 'date',
+        label: 'Fecha de nacimiento',
+        validationRules: {
+          required: true,
+          info: 'Selecciona tu fecha de nacimiento. Esta información es necesaria para calcular tu edad y proporcionar atención médica apropiada.'
+        }
+      },
+      gender: {
+        type: 'selection',
+        label: 'Sexo',
+        options: [
+          { value: 'Masculino', label: 'Masculino' },
+          { value: 'Femenino', label: 'Femenino' }
+        ],
+        validationRules: {
+          required: true,
+          info: 'Selecciona tu identidad de género. Esta información es importante para proporcionar atención médica personalizada y respetuosa.'
+        },
+        allowOther: false
+      },
+      height: {
+        type: 'input',
+        label: 'Altura (cm)',
+        placeholder: 'Ej: 170',
+        keyboardType: 'numeric',
+        maxLength: 5,
+        validationRules: {
+          required: true,
+          range: { min: 50, max: 250 },
+          info: 'La altura es la medida desde la base de los pies hasta la parte superior de la cabeza. Debe estar entre 50 y 250 centímetros para ser válida.'
+        }
+      },
+      weight: {
+        type: 'input',
+        label: 'Peso (kg)',
+        placeholder: 'Ej: 70.5',
+        keyboardType: 'numeric',
+        maxLength: 6,
+        validationRules: {
+          required: true,
+          range: { min: 20, max: 300 },
+          info: 'El peso corporal se mide en kilogramos. Debe estar entre 20 y 300 kg para ser considerado válido.'
+        }
+      },
+      bloodType: {
+        type: 'selection',
+        label: 'Grupo sanguíneo',
+        options: [
+          { value: 'A+', label: 'A+' },
+          { value: 'A-', label: 'A-' },
+          { value: 'B+', label: 'B+' },
+          { value: 'B-', label: 'B-' },
+          { value: 'AB+', label: 'AB+' },
+          { value: 'AB-', label: 'AB-' },
+          { value: 'O+', label: 'O+' },
+          { value: 'O-', label: 'O-' }
+        ],
+        validationRules: {
+          required: true,
+          info: 'Tu grupo sanguíneo es importante en caso de emergencias médicas o transfusiones.'
+        },
+        allowOther: false
+      },
+      allergies: {
+        type: 'selection',
+        label: 'Alergias',
+        options: [
+          { value: 'Ninguna', label: 'Ninguna' },
+          { value: 'Penicilina', label: 'Penicilina' },
+          { value: 'Aspirina', label: 'Aspirina' },
+          { value: 'Ibuprofeno', label: 'Ibuprofeno' },
+          { value: 'Látex', label: 'Látex' },
+          { value: 'Polen', label: 'Polen' },
+          { value: 'Ácaros', label: 'Ácaros' },
+          { value: 'Mariscos', label: 'Mariscos' },
+          { value: 'Frutos secos', label: 'Frutos secos' },
+          { value: 'Huevos', label: 'Huevos' },
+          { value: 'Leche', label: 'Leche' },
+          { value: 'Gluten', label: 'Gluten' }
+        ],
+        validationRules: {
+          required: true,
+          info: 'Informa sobre cualquier alergia que tengas para evitar reacciones adversas durante tratamientos médicos.'
+        },
+        allowOther: true
+      },
+      disability: {
+        type: 'selection',
+        label: 'Discapacidad',
+        options: [
+          { value: 'Ninguna', label: 'Ninguna' },
+          { value: 'Visual', label: 'Visual' },
+          { value: 'Auditiva', label: 'Auditiva' },
+          { value: 'Motora', label: 'Motora' },
+          { value: 'Intelectual', label: 'Intelectual' },
+          { value: 'Psicosocial', label: 'Psicosocial' },
+          { value: 'Múltiple', label: 'Múltiple' }
+        ],
+        validationRules: {
+          required: true,
+          info: 'Esta información ayuda a adaptar la atención médica y garantizar accesibilidad en nuestros servicios.'
+        },
+        allowOther: true
       }
     };
 
-    // Agregar listener para cerrar dropdown
-    return () => {
-      // Cleanup
-    };
-  }, [showCityDropdown]);
-
-  // Función para validar un campo específico
-  const validateField = (field, value) => {
-    let isValid = true;
-    let errorMessage = "";
-
-    switch (field) {
-      case "name":
-        if (!value.trim()) {
-          isValid = false;
-          errorMessage = "El nombre es obligatorio";
-        } else if (value.length > 30) {
-          isValid = false;
-          errorMessage = "El nombre no puede exceder 30 caracteres";
-        } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value)) {
-          isValid = false;
-          errorMessage = "El nombre solo puede contener letras y espacios";
-        }
-        break;
-      case "email":
-        if (!value.trim()) {
-          isValid = false;
-          errorMessage = "El email es obligatorio";
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-          isValid = false;
-          errorMessage = "Ingresa un email válido";
-        }
-        break;
-      case "areaCode":
-        if (!value.trim()) {
-          isValid = false;
-          errorMessage = "El código de área es obligatorio";
-        } else if (!/^\+\d{1,4}$/.test(value)) {
-          isValid = false;
-          errorMessage =
-            "El código de área debe empezar con + seguido de 1 a 4 números";
-        }
-        break;
-      case "phoneNumber":
-        if (!value.trim()) {
-          isValid = false;
-          errorMessage = "El número de teléfono es obligatorio";
-        } else if (!/^\d+$/.test(value)) {
-          isValid = false;
-          errorMessage = "El número solo debe contener dígitos";
-        } else if (value.length < 8 || value.length > 14) {
-          isValid = false;
-          errorMessage = "El número debe tener entre 8 y 14 dígitos";
-        }
-        break;
-      case "city":
-        if (!value.trim()) {
-          isValid = false;
-          errorMessage = "La ciudad es obligatoria";
-        }
-        break;
-      case "birthDate":
-        if (!value.trim()) {
-          isValid = false;
-          errorMessage = "La fecha de nacimiento es obligatoria";
-        }
-        break;
-      case "gender":
-        if (!value.trim()) {
-          isValid = false;
-          errorMessage = "El sexo es obligatorio";
-        }
-        break;
-      case "height":
-        if (!value.trim()) {
-          isValid = false;
-          errorMessage = "La altura es obligatoria";
-        } else if (!/^\d+(\.\d+)?$/.test(value)) {
-          isValid = false;
-          errorMessage = "La altura debe ser un número válido";
-        } else if (parseFloat(value) < 50 || parseFloat(value) > 250) {
-          isValid = false;
-          errorMessage = "La altura debe estar entre 50 y 250 cm";
-        }
-        break;
-      case "weight":
-        if (!value.trim()) {
-          isValid = false;
-          errorMessage = "El peso es obligatorio";
-        } else if (!/^\d+(\.\d+)?$/.test(value)) {
-          isValid = false;
-          errorMessage = "El peso debe ser un número válido";
-        } else if (parseFloat(value) < 20 || parseFloat(value) > 300) {
-          isValid = false;
-          errorMessage = "El peso debe estar entre 20 y 300 kg";
-        }
-        break;
-      default:
-        break;
-    }
-
-    return { isValid, errorMessage };
+    return configs[field] || { type: 'input', label: field };
   };
 
-  // Función para actualizar un campo específico
-  const updateField = (field, value) => {
-    setEditingUser((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-
-    // Validar el campo en tiempo real
-    const validation = validateField(field, value);
-    setErrors((prev) => ({
-      ...prev,
-      [field]: validation.isValid ? null : validation.errorMessage,
-    }));
-  };
-
-  // Función para verificar si hay errores
-  const hasErrors = () => {
-    return Object.values(errors).some((error) => error !== null);
-  };
-
-  // Función para verificar si todos los campos están completos
-  const isFormComplete = () => {
-    return (
-      editingUser.name.trim() &&
-      editingUser.email.trim() &&
-      editingUser.areaCode.trim() &&
-      editingUser.phoneNumber.trim() &&
-      editingUser.city.trim() &&
-      editingUser.birthDate.trim() &&
-      editingUser.gender.trim() &&
-      editingUser.height.trim() &&
-      editingUser.weight.trim()
-    );
-  };
-
-  // Función para guardar los cambios
-  const handleSave = () => {
-    // Verificar si hay errores o campos incompletos
-    if (hasErrors() || !isFormComplete()) {
-      Alert.alert(
-        "Error",
-        "Por favor corrige todos los errores antes de guardar"
-      );
-      return;
-    }
-
-    // Combinar el código de área y número de teléfono
-    const userDataToSave = {
-      ...editingUser,
-      phone: `${editingUser.areaCode} ${editingUser.phoneNumber}`,
-    };
-
-    // Aquí normalmente enviarías los datos al servidor
-    // Por ahora solo mostramos un mensaje de éxito
-    Alert.alert("Éxito", "Información actualizada correctamente", [
-      {
-        text: "OK",
-        onPress: () => {
-          // Pasar los datos actualizados de vuelta a la pantalla anterior
-          navigation.navigate("PatientProfileMain", {
-            updatedUser: userDataToSave,
-          });
-        },
-      },
-    ]);
-  };
-
-  // Función para cancelar la edición
-  const handleCancel = () => {
-    navigation.goBack();
-  };
-
-  // Función para manejar el cambio de página
-  const onViewableItemsChanged = useRef(({ viewableItems }) => {
-    if (viewableItems.length > 0) {
-      setCurrentIndex(viewableItems[0].index);
-    }
-  }).current;
-
-  // Función para cambiar de página manualmente
-  const goToPage = (index) => {
-    flatListRef.current?.scrollToIndex({ index, animated: true });
-  };
-
-  // Renderizar la primera pantalla (Información básica)
-  const renderBasicInfoScreen = () => (
-    <ScrollView 
-      style={styles.screenContainer} 
-      contentContainerStyle={styles.screenContentContainer}
-      showsVerticalScrollIndicator={false}
+  // Función para renderizar un item del menú
+  const renderMenuItem = (field, label, icon) => (
+    <TouchableOpacity 
+      style={styles.menuItem}
+      onPress={() => handleEditField(field)}
     >
-      
-      {/* Nombre */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Nombre completo *</Text>
-        <View
-          style={[
-            styles.inputContainer,
-            errors.name ? styles.inputContainerError : null,
-          ]}
-        >
-          <Ionicons
-            name="person-outline"
-            size={20}
-            color={errors.name ? "#FF3B30" : "#666"}
-            style={styles.inputIcon}
-          />
-          <TextInput
-            style={styles.textInput}
-            value={editingUser.name}
-            onChangeText={(text) => updateField("name", text)}
-            placeholder="Ingresa tu nombre completo"
-            placeholderTextColor="#999"
-            autoCapitalize="words"
-            maxLength={30}
-          />
+      <View style={styles.menuItemLeft}>
+        <View style={styles.menuItemIcon}>
+          <Ionicons name={icon} size={20} color="#666" />
         </View>
-        {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
-      </View>
-
-      {/* Email */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Email *</Text>
-        <View
-          style={[
-            styles.inputContainer,
-            errors.email ? styles.inputContainerError : null,
-          ]}
-        >
-          <Ionicons
-            name="mail-outline"
-            size={20}
-            color={errors.email ? "#FF3B30" : "#666"}
-            style={styles.inputIcon}
-          />
-          <TextInput
-            style={styles.textInput}
-            value={editingUser.email}
-            onChangeText={(text) => updateField("email", text)}
-            placeholder="Ingresa tu email"
-            placeholderTextColor="#999"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-        </View>
-        {errors.email && (
-          <Text style={styles.errorText}>{errors.email}</Text>
-        )}
-      </View>
-
-      {/* Teléfono */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Número de teléfono *</Text>
-        <View style={styles.phoneInputRow}>
-          {/* Input para código de país */}
-          <View
-            style={[
-              styles.countryCodeContainer,
-              errors.areaCode ? styles.inputContainerError : null,
-            ]}
-          >
-            <TextInput
-              style={styles.countryCodeInput}
-              value={editingUser.areaCode}
-              onChangeText={(text) => updateField("areaCode", text)}
-              placeholder="+58"
-              placeholderTextColor="#999"
-              keyboardType="phone-pad"
-              maxLength={5}
-            />
-          </View>
-
-          {/* Input para número de teléfono */}
-          <View
-            style={[
-              styles.phoneNumberContainer,
-              errors.phoneNumber ? styles.inputContainerError : null,
-            ]}
-          >
-            <TextInput
-              style={styles.textInput}
-              value={editingUser.phoneNumber}
-              onChangeText={(text) => updateField("phoneNumber", text)}
-              placeholder="Ingresa tu número"
-              placeholderTextColor="#999"
-              keyboardType="phone-pad"
-              maxLength={14}
-            />
-          </View>
-        </View>
-
-        {/* Mostrar errores */}
-        {(errors.areaCode || errors.phoneNumber) && (
-          <Text style={styles.errorText}>
-            {errors.areaCode || errors.phoneNumber}
+        <View style={styles.menuItemContent}>
+          <Text style={styles.menuItemLabel}>{label}</Text>
+          <Text style={styles.menuItemValue}>
+            {field === 'phone' 
+              ? `${editingUser.areaCode} ${editingUser.phoneNumber}` 
+              : field === 'birthDate' && editingUser[field]
+              ? formatDateForDisplay(editingUser[field], 'long')
+              : editingUser[field] 
+              ? String(editingUser[field])
+              : "No especificado"
+            }
           </Text>
-        )}
-      </View>
-
-      {/* Ciudad */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Ciudad *</Text>
-        <View
-          style={[
-            styles.inputContainer,
-            errors.city ? styles.inputContainerError : null,
-          ]}
-        >
-          <TouchableOpacity
-            style={styles.cityDropdownButton}
-            onPress={() => setShowCityDropdown(!showCityDropdown)}
-          >
-            <Ionicons
-              name="location-outline"
-              size={20}
-              color={errors.city ? "#FF3B30" : "#666"}
-              style={styles.inputIcon}
-            />
-            <Text style={styles.cityDropdownText}>
-              {editingUser.city || "Selecciona tu ciudad"}
-            </Text>
-            <Ionicons name="chevron-down" size={16} color="#666" />
-          </TouchableOpacity>
         </View>
-        
-        {/* Dropdown de ciudades */}
-        {showCityDropdown && (
-          <View style={styles.cityDropdownContainer}>
-            {venezuelanCities.map((city, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.cityDropdownItem,
-                  editingUser.city === city && styles.cityDropdownItemSelected
-                ]}
-                onPress={() => {
-                  updateField("city", city);
-                  setShowCityDropdown(false);
-                }}
-              >
-                <Text style={[
-                  styles.cityDropdownItemText,
-                  editingUser.city === city && styles.cityDropdownItemTextSelected
-                ]}>
-                  {city}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-        
-        {errors.city && <Text style={styles.errorText}>{errors.city}</Text>}
       </View>
-
-    </ScrollView>
+      <View style={styles.menuItemRight}>
+        <Ionicons name="chevron-forward" size={20} color="#999" />
+      </View>
+    </TouchableOpacity>
   );
-
-  // Renderizar la segunda pantalla (Información adicional)
-  const renderAdditionalInfoScreen = () => (
-    <ScrollView 
-      style={styles.screenContainer} 
-      contentContainerStyle={styles.screenContentContainer}
-      showsVerticalScrollIndicator={false}
-    >
-
-      {/* Fecha de nacimiento */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Fecha de nacimiento *</Text>
-        <View
-          style={[
-            styles.inputContainer,
-            errors.birthDate ? styles.inputContainerError : null,
-          ]}
-        >
-          <Ionicons
-            name="calendar-outline"
-            size={20}
-            color={errors.birthDate ? "#FF3B30" : "#666"}
-            style={styles.inputIcon}
-          />
-          <TextInput
-            style={styles.textInput}
-            value={editingUser.birthDate}
-            onChangeText={(text) => updateField("birthDate", text)}
-            placeholder="DD/MM/AAAA"
-            placeholderTextColor="#999"
-            keyboardType="numeric"
-            maxLength={10}
-          />
-        </View>
-        {errors.birthDate && (
-          <Text style={styles.errorText}>{errors.birthDate}</Text>
-        )}
-      </View>
-
-      {/* Sexo */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Sexo *</Text>
-        <View
-          style={[
-            styles.inputContainer,
-            errors.gender ? styles.inputContainerError : null,
-          ]}
-        >
-          <Ionicons
-            name="person-outline"
-            size={20}
-            color={errors.gender ? "#FF3B30" : "#666"}
-            style={styles.inputIcon}
-          />
-          <TextInput
-            style={styles.textInput}
-            value={editingUser.gender}
-            onChangeText={(text) => updateField("gender", text)}
-            placeholder="Masculino, Femenino u Otro"
-            placeholderTextColor="#999"
-            autoCapitalize="words"
-          />
-        </View>
-        {errors.gender && (
-          <Text style={styles.errorText}>{errors.gender}</Text>
-        )}
-      </View>
-
-      {/* Altura */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Altura (cm) *</Text>
-        <View
-          style={[
-            styles.inputContainer,
-            errors.height ? styles.inputContainerError : null,
-          ]}
-        >
-          <Ionicons
-            name="resize-outline"
-            size={20}
-            color={errors.height ? "#FF3B30" : "#666"}
-            style={styles.inputIcon}
-          />
-          <TextInput
-            style={styles.textInput}
-            value={editingUser.height}
-            onChangeText={(text) => updateField("height", text)}
-            placeholder="Ej: 170"
-            placeholderTextColor="#999"
-            keyboardType="numeric"
-            maxLength={5}
-          />
-        </View>
-        {errors.height && (
-          <Text style={styles.errorText}>{errors.height}</Text>
-        )}
-      </View>
-
-      {/* Peso */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Peso (kg) *</Text>
-        <View
-          style={[
-            styles.inputContainer,
-            errors.weight ? styles.inputContainerError : null,
-          ]}
-        >
-          <Ionicons
-            name="scale-outline"
-            size={20}
-            color={errors.weight ? "#FF3B30" : "#666"}
-            style={styles.inputIcon}
-          />
-          <TextInput
-            style={styles.textInput}
-            value={editingUser.weight}
-            onChangeText={(text) => updateField("weight", text)}
-            placeholder="Ej: 70.5"
-            placeholderTextColor="#999"
-            keyboardType="numeric"
-            maxLength={6}
-          />
-        </View>
-        {errors.weight && (
-          <Text style={styles.errorText}>{errors.weight}</Text>
-        )}
-      </View>
-    </ScrollView>
-  );
-
-  // Datos para el carrusel
-  const carouselData = [
-    { id: 'basic', render: renderBasicInfoScreen },
-    { id: 'additional', render: renderAdditionalInfoScreen }
-  ];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -622,97 +329,41 @@ const EditPatientProfile = ({ navigation, route }) => {
       {/* Línea superior sutil */}
       <View style={styles.sectionDivider} />
 
-      {/* Carrusel de formularios */}
-      <View style={styles.carouselContainer}>
-        {/* Título de sección activa con navegación */}
-        <View style={styles.sectionTitles}>
-          {currentIndex === 0 ? (
-            <TouchableOpacity
-              style={styles.sectionTitle}
-              onPress={() => goToPage(1)}
-            >
-              <Text style={styles.sectionTitleText}>Perfil</Text>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color="#999"
-              />
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={styles.sectionTitle}
-              onPress={() => goToPage(0)}
-            >
-              <Ionicons
-                name="chevron-back"
-                size={20}
-                color="#999"
-              />
-              <Text style={styles.sectionTitleText}>Datos Médicos</Text>
-            </TouchableOpacity>
-          )}
+      {/* Menú de edición */}
+      <ScrollView 
+        style={styles.menuContainer}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.menuContentContainer}
+      >
+        {/* Sección: Datos de Perfil */}
+        <View style={styles.menuSection}>
+          <Text style={styles.menuSectionTitle}>Datos de Perfil</Text>
+          
+          {renderMenuItem('name', 'Nombre completo', 'person-outline')}
+          {renderMenuItem('email', 'Email', 'mail-outline')}
+          {renderMenuItem('phone', 'Teléfono', 'call-outline')}
+          {renderMenuItem('city', 'Ciudad', 'location-outline')}
         </View>
 
-        {/* FlatList horizontal para el carrusel */}
-        <FlatList
-          ref={flatListRef}
-          data={carouselData}
-          renderItem={({ item }) => (
-            <View style={styles.carouselItem}>
-              {item.render()}
-            </View>
-          )}
-          keyExtractor={(item) => item.id}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          onViewableItemsChanged={onViewableItemsChanged}
-          viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
-          getItemLayout={(data, index) => ({
-            length: screenWidth - 20,
-            offset: (screenWidth - 20) * index,
-            index,
-          })}
-        />
-      </View>
+        {/* Línea divisoria entre secciones */}
+        <View style={styles.sectionDivider} />
+
+        {/* Sección: Datos Médicos */}
+        <View style={styles.menuSection}>
+          <Text style={styles.menuSectionTitle}>Datos Médicos</Text>
+          
+          {renderMenuItem('birthDate', 'Fecha de nacimiento', 'calendar-outline')}
+          {renderMenuItem('gender', 'Sexo', 'person-outline')}
+          {renderMenuItem('height', 'Altura (cm)', 'resize-outline')}
+          {renderMenuItem('weight', 'Peso (kg)', 'scale-outline')}
+          {renderMenuItem('bloodType', 'Grupo sanguíneo', 'water-outline')}
+          {renderMenuItem('allergies', 'Alergias', 'warning-outline')}
+          {renderMenuItem('disability', 'Discapacidad', 'accessibility-outline')}
+        </View>
+      </ScrollView>
 
       {/* Línea inferior sutil */}
       <View style={styles.sectionDivider} />
-
-      {/* Action Buttons */}
-      <View style={styles.actionButtonsContainer}>
-        <TouchableOpacity
-          style={[
-            styles.saveButton,
-            hasErrors() || !isFormComplete()
-              ? styles.saveButtonDisabled
-              : null,
-          ]}
-          onPress={handleSave}
-          disabled={hasErrors() || !isFormComplete()}
-        >
-          <Ionicons
-            name="checkmark"
-            size={20}
-            color={hasErrors() || !isFormComplete() ? "#999" : "#007AFF"}
-            />
-                      <Text
-              style={[
-                styles.saveButtonText,
-                hasErrors() || !isFormComplete()
-                  ? styles.saveButtonTextDisabled
-                  : null,
-              ]}
-            >
-              Guardar
-            </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
-          <Ionicons name="close" size={20} color="#666" />
-          <Text style={styles.cancelButtonText}>Cancelar</Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 };
@@ -766,231 +417,42 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     marginLeft: 8,
   },
-  carouselContainer: {
-    height: isWeb ? 'auto' : 380,
-    marginBottom: 15,
-    ...(isWeb && {
-      maxWidth: 800,
-      margin: '0 auto',
-      padding: '10px',
-    }),
-  },
-  sectionTitles: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  sectionTitle: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 0,
-    borderRadius: 8,
-    backgroundColor: "transparent",
-    gap: 8,
-  },
-  sectionTitleText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#666",
-  },
   sectionDivider: {
     height: 1,
     backgroundColor: "#E0E0E0",
     marginHorizontal: 20,
     marginVertical: 8,
   },
-  carouselItem: {
-    width: isWeb ? 600 : screenWidth - 20,
-    paddingHorizontal: isWeb ? 5 : 10,
-    ...(isWeb && {
-      margin: '0 auto',
-      display: 'block',
-    }),
-  },
-  screenContainer: {
-    height: isWeb ? 'auto' : 450,
-    paddingBottom: 20,
-    ...(isWeb && {
-      minHeight: 400,
-      padding: '20px',
-    }),
-  },
-  screenContentContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: isWeb ? 5 : 10,
-    ...(isWeb && {
-      width: '100%',
-      maxWidth: 400,
-    }),
-  },
-  inputGroup: {
-    marginBottom: 16,
-    width: '100%',
-    ...(isWeb && {
-      maxWidth: 400,
-      margin: '0 auto 16px auto',
-    }),
-  },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1A1A1A",
-    marginBottom: 8,
-  },
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 11,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    ...(isWeb && webStyles.input),
-  },
-  inputIcon: {
-    marginRight: 12,
-  },
-  textInput: {
+  menuContainer: {
     flex: 1,
-    fontSize: 16,
-    color: "#1A1A1A",
-  },
-  inputContainerError: {
-    borderColor: "#FF3B30",
-    borderWidth: 1,
-  },
-  errorText: {
-    color: "#FF3B30",
-    fontSize: 12,
-    marginTop: 4,
-    marginLeft: 4,
-  },
-  phoneInputRow: {
-    flexDirection: "row",
-    gap: 12,
-    width: '100%',
     ...(isWeb && {
-      maxWidth: 500,
+      maxWidth: 800,
       margin: '0 auto',
     }),
   },
-  countryCodeContainer: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 11,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    minWidth: isWeb ? 60 : 70,
-    justifyContent: "center",
-  },
-  countryCodeInput: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1A1A1A",
-    textAlign: "center",
-    minWidth: isWeb ? 40 : 50,
-  },
-  phoneNumberContainer: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 11,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cityDropdownButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  cityDropdownText: {
-    flex: 1,
-    fontSize: 16,
-    color: "#1A1A1A",
-    marginLeft: 12,
-  },
-  cityDropdownContainer: {
-    position: "absolute",
-    top: "100%",
-    left: 0,
-    right: 0,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    marginTop: 4,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 8,
-    zIndex: 9999,
-    maxHeight: 200,
-  },
-  cityDropdownItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
-  },
-  cityDropdownItemSelected: {
-    backgroundColor: "#F0F8FF",
-  },
-  cityDropdownItemText: {
-    fontSize: 14,
-    color: "#1A1A1A",
-  },
-  cityDropdownItemTextSelected: {
-    color: "#007AFF",
-    fontWeight: "600",
-  },
-  actionButtonsContainer: {
-    flexDirection: "row",
+  menuContentContainer: {
     paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 18,
-    gap: 12,
-    minHeight: 60,
-    marginBottom: isWeb ? 80 : 20,
+    paddingBottom: 20,
   },
-  saveButton: {
-    flex: 1,
+  menuSection: {
+    marginBottom: 24,
+  },
+  menuSectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1A1A1A",
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "transparent",
-    paddingVertical: 18,
+    justifyContent: "space-between",
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#007AFF",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    marginBottom: 8,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -999,45 +461,37 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    ...(isWeb && webStyles.button),
+    ...(isWeb && webStyles.menuItem),
   },
-  saveButtonDisabled: {
-    borderColor: "#CCC",
+  menuItemLeft: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
   },
-  saveButtonText: {
-    color: "#007AFF",
+  menuItemIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#F0F8FF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 16,
+  },
+  menuItemContent: {
+    flex: 1,
+  },
+  menuItemLabel: {
     fontSize: 16,
     fontWeight: "600",
-    marginLeft: 8,
+    color: "#1A1A1A",
+    marginBottom: 4,
   },
-  saveButtonTextDisabled: {
-    color: "#999",
-  },
-  cancelButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "transparent",
-    paddingVertical: 18,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#666",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    ...(isWeb && webStyles.button),
-  },
-  cancelButtonText: {
+  menuItemValue: {
+    fontSize: 14,
     color: "#666",
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 8,
+  },
+  menuItemRight: {
+    marginLeft: 16,
   },
 });
 

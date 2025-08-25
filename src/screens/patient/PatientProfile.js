@@ -9,30 +9,15 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { usePatientProfile } from '../../context/PatientProfileContext';
+import { formatDateForDisplay } from '../../utils/dateUtils';
 
 const PatientProfile = ({ navigation, route }) => {
-  // Mock user data
-  const [user, setUser] = useState({
-    name: 'Maria González',
-    email: 'maria.gonzalez@email.com',
-    phone: '+58 412 345 6789',
-    city: 'Caracas',
-    birthDate: '15/03/1990',
-    gender: 'Femenino',
-    height: '165',
-    weight: '58',
-    membershipDate: 'Enero 2024',
-    image: "https://media.istockphoto.com/id/1437816897/photo/business-woman-manager-or-human-resources-portrait-for-career-success-company-we-are-hiring.jpg?s=612x612&w=0&k=20&c=tyLvtzutRh22j9GqSGI33Z4HpIwv9vL_MZw_xOE19NQ="
-  });
-
-  // Verificar si hay datos actualizados desde la pantalla de edición
-  useEffect(() => {
-    if (route.params?.updatedUser) {
-      setUser(route.params.updatedUser);
-      // Limpiar los parámetros para evitar actualizaciones no deseadas
-      navigation.setParams({ updatedUser: undefined });
-    }
-  }, [route.params?.updatedUser, navigation]);
+  // Obtener los datos del usuario desde el contexto
+  const { patientProfile } = usePatientProfile();
+  
+  // Usar los datos del contexto directamente
+  const user = patientProfile;
 
   const menuItems = [
     {
@@ -175,22 +160,6 @@ const PatientProfile = ({ navigation, route }) => {
              <View style={styles.infoRow}>
                <Ionicons name="location-outline" size={20} color="#666" />
                <Text style={styles.infoText}>{user.city}</Text>
-             </View>
-             <View style={styles.infoRow}>
-               <Ionicons name="calendar-outline" size={20} color="#666" />
-               <Text style={styles.infoText}>Fecha de nacimiento: {user.birthDate}</Text>
-             </View>
-             <View style={styles.infoRow}>
-               <Ionicons name="person-outline" size={20} color="#666" />
-               <Text style={styles.infoText}>Sexo: {user.gender}</Text>
-             </View>
-             <View style={styles.infoRow}>
-               <Ionicons name="resize-outline" size={20} color="#666" />
-               <Text style={styles.infoText}>Altura: {user.height} cm</Text>
-             </View>
-             <View style={styles.infoRow}>
-               <Ionicons name="scale-outline" size={20} color="#666" />
-               <Text style={styles.infoText}>Peso: {user.weight} kg</Text>
              </View>
              <View style={styles.infoRow}>
                <Ionicons name="calendar-outline" size={20} color="#666" />
