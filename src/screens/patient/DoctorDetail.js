@@ -184,7 +184,11 @@ const DoctorDetail = ({ navigation, route }) => {
 
         {/* Doctor Info */}
         <View style={styles.doctorInfo}>
-          <Image source={{ uri: doctorData.image }} style={styles.doctorImage} />
+          <Image 
+            source={{ uri: doctorData.image || 'https://via.placeholder.com/100' }} 
+            style={styles.doctorImage}
+            defaultSource={{ uri: 'https://via.placeholder.com/100' }}
+          />
           <View style={styles.doctorDetails}>
             <Text style={styles.doctorName}>{doctorData.name}</Text>
             <Text style={styles.doctorSpecialty}>{doctorData.specialty}</Text>
@@ -206,7 +210,7 @@ const DoctorDetail = ({ navigation, route }) => {
             onPress={() => setActiveTab('about')}
           >
             <Text style={[styles.tabText, activeTab === 'about' && styles.activeTabText]}>
-              About
+              Info
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -222,7 +226,7 @@ const DoctorDetail = ({ navigation, route }) => {
             onPress={() => setActiveTab('availability')}
           >
             <Text style={[styles.tabText, activeTab === 'availability' && styles.activeTabText]}>
-              Availability
+              Disponibilidad
             </Text>
           </TouchableOpacity>
         </View>
@@ -238,13 +242,13 @@ const DoctorDetail = ({ navigation, route }) => {
           onPress={() => navigation.navigate('ChatScreen', { doctor: doctorData })}
         >
           <Ionicons name="chatbubble-outline" size={20} color="#007AFF" />
-          <Text style={styles.contactButtonText}>Contact</Text>
+          <Text style={styles.contactButtonText}>Contactar</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.bookButton}
           onPress={() => navigation.navigate('BookAppointment', { doctor: doctorData })}
         >
-          <Text style={styles.bookButtonText}>Book Appointment</Text>
+          <Text style={styles.bookButtonText}>Agendar Consulta</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

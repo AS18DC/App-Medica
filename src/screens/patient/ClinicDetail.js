@@ -164,7 +164,11 @@ const ClinicDetail = ({ navigation, route }) => {
     <View style={styles.tabContent}>
       {/* Clinic Info */}
       <View style={styles.clinicInfo}>
-        <Image source={{ uri: clinicData.image }} style={styles.clinicImage} />
+        <Image 
+          source={{ uri: clinicData.image || 'https://via.placeholder.com/120' }} 
+          style={styles.clinicImage}
+          defaultSource={{ uri: 'https://via.placeholder.com/120' }}
+        />
         <View style={styles.clinicDetails}>
           <Text style={styles.clinicName}>{clinicData.name}</Text>
           <Text style={styles.clinicAddress}>{clinicData.address}</Text>
@@ -204,7 +208,11 @@ const ClinicDetail = ({ navigation, route }) => {
               style={styles.doctorCard}
               onPress={() => navigation.navigate('DoctorDetail', { doctor })}
             >
-              <Image source={{ uri: doctor.image }} style={styles.doctorImage} />
+              <Image 
+                source={{ uri: doctor.image || 'https://via.placeholder.com/60' }} 
+                style={styles.doctorImage}
+                defaultSource={{ uri: 'https://via.placeholder.com/60' }}
+              />
               <View style={styles.doctorInfo}>
                 <Text style={styles.doctorName}>{doctor.name}</Text>
                 <Text style={styles.doctorSpecialty}>{doctor.specialty}</Text>
@@ -293,7 +301,11 @@ const ClinicDetail = ({ navigation, route }) => {
                   style={styles.doctorHorizontalCard}
                   onPress={() => navigation.navigate('DoctorDetail', { doctor })}
                 >
-                  <Image source={{ uri: doctor.image }} style={styles.doctorHorizontalImage} />
+                  <Image 
+                    source={{ uri: doctor.image || 'https://via.placeholder.com/80' }} 
+                    style={styles.doctorHorizontalImage}
+                    defaultSource={{ uri: 'https://via.placeholder.com/80' }}
+                  />
                   <View style={styles.doctorHorizontalInfo}>
                     <Text style={styles.doctorHorizontalName}>{doctor.name}</Text>
                     <Text style={styles.doctorHorizontalSpecialty}>{doctor.specialty}</Text>

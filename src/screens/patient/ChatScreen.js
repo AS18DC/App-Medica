@@ -63,17 +63,23 @@ const ChatScreen = ({ navigation, route }) => {
     }
   };
 
+  // Handlers for each attachment type
+  const handleAttachImage = () => {
+    setIsAttaching(false);
+    console.log('Adjuntar imagen');
+  };
+  const handleAttachDocument = () => {
+    setIsAttaching(false);
+    console.log('Adjuntar documento');
+  };
+  const handleAttachCamera = () => {
+    setIsAttaching(false);
+    console.log('Tomar foto');
+  };
+
+  // Toggle attachment menu
   const handleAttachment = () => {
-    Alert.alert(
-      'Adjuntar archivo',
-      'Selecciona el tipo de archivo',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Imagen', onPress: () => console.log('Adjuntar imagen') },
-        { text: 'Documento', onPress: () => console.log('Adjuntar documento') },
-        { text: 'Cámara', onPress: () => console.log('Tomar foto') },
-      ]
-    );
+    setIsAttaching((prev) => !prev);
   };
 
   const renderMessage = (msg) => (
@@ -157,6 +163,23 @@ const ChatScreen = ({ navigation, route }) => {
 
         {/* Message Input */}
         <View style={styles.inputContainer}>
+          {/* Attachment menu (now a row above the input) */}
+          {isAttaching && (
+            <View style={styles.attachmentMenuRow}>
+              <TouchableOpacity style={styles.attachmentMenuItem} onPress={handleAttachImage}>
+                <Ionicons name="image-outline" size={28} color="#007AFF" />
+                <Text style={styles.attachmentMenuText}>Imagen</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.attachmentMenuItem} onPress={handleAttachDocument}>
+                <Ionicons name="document-outline" size={28} color="#007AFF" />
+                <Text style={styles.attachmentMenuText}>Documento</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.attachmentMenuItem} onPress={handleAttachCamera}>
+                <Ionicons name="camera-outline" size={28} color="#007AFF" />
+                <Text style={styles.attachmentMenuText}>Cámara</Text>
+              </TouchableOpacity>
+            </View>
+          )}
           <View style={styles.inputWrapper}>
             <TouchableOpacity style={styles.attachButton} onPress={handleAttachment}>
               <Ionicons name="add-circle-outline" size={24} color="#007AFF" />
@@ -326,6 +349,32 @@ const styles = StyleSheet.create({
   },
   attachment: {
     marginBottom: 8,
+  },
+  attachmentMenuRow: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    marginHorizontal: 0,
+    marginBottom: 4,
+    paddingVertical: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+    zIndex: 20,
+  },
+  attachmentMenuItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 16,
+  },
+  attachmentMenuText: {
+    fontSize: 13,
+    color: '#007AFF',
+    marginTop: 2,
   },
 });
 
