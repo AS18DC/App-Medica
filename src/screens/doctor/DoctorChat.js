@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,11 +9,28 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import MessageStatus from '../../components/MessageStatus';
+// ...existing code...
 import { isWeb, webStyles, getResponsiveSpacing, getResponsiveFontSize, getResponsivePadding } from '../../utils/responsive';
 
 const DoctorChat = ({ navigation, route }) => {
+  const [isAttaching, setIsAttaching] = useState(false);
+  const scrollViewRef = useRef(null);
+  const handleAttachment = () => {
+    Alert.alert(
+      'Adjuntar archivo',
+      'Selecciona el tipo de archivo',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Imagen', onPress: () => console.log('Adjuntar imagen') },
+        { text: 'Documento', onPress: () => console.log('Adjuntar documento') },
+        { text: 'Cámara', onPress: () => console.log('Tomar foto') },
+      ]
+    );
+  };
   const { patient, appointment } = route.params || {};
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([
@@ -37,6 +54,14 @@ const DoctorChat = ({ navigation, route }) => {
     },
   ]);
 
+  useEffect(() => {
+    if (Array.isArray(messages) && scrollViewRef.current && messages.length > 0) {
+      setTimeout(() => {
+        scrollViewRef.current.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  }, [messages.length]);
+
   const handleSendMessage = () => {
     if (message.trim()) {
       const newMessage = {
@@ -47,6 +72,11 @@ const DoctorChat = ({ navigation, route }) => {
       };
       setMessages([...messages, newMessage]);
       setMessage('');
+      setTimeout(() => {
+        if (scrollViewRef.current) {
+          scrollViewRef.current.scrollToEnd({ animated: true });
+        }
+      }, 100);
     }
   };
 
@@ -73,83 +103,99 @@ const DoctorChat = ({ navigation, route }) => {
         >
           {msg.text}
         </Text>
-        <Text
-          style={[
-            styles.messageTime,
-            { fontSize: getResponsiveFontSize(10, 11, 12) },
-          ]}
-        >
-          {msg.timestamp}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' }}>
+          <Text
+            style={[
+              styles.messageTime,
+              { fontSize: getResponsiveFontSize(10, 11, 12) },
+            ]}
+          >
+            {msg.timestamp}
+          </Text>
+          {msg.sender === 'doctor' && (
+            <MessageStatus status={msg.status} />
+          )}
+        </View>
       </View>
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={[styles.content, isWeb && webStyles.container]}>
-        {/* Header */}
-        <View style={[styles.header, { paddingHorizontal: getResponsivePadding(20, 40, 60) }]}>
-          <View style={styles.headerTop}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => navigation.goBack()}
-            >
-              <Ionicons name="arrow-back" size={getResponsiveFontSize(24, 26, 28)} color="#1A1A1A" />
-            </TouchableOpacity>
-            <View style={styles.headerInfo}>
-              <Text style={[styles.patientName, { fontSize: getResponsiveFontSize(18, 20, 22) }]}>
-                {patient?.name || 'Paciente'}
-              </Text>
-              <Text style={[styles.appointmentInfo, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                Cita: {appointment?.date || 'Fecha no especificada'}
-              </Text>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
+      >
+        <View style={[styles.content, isWeb && webStyles.container]}>
+          {/* Header */}
+          <View style={[styles.header, { paddingHorizontal: getResponsivePadding(20, 40, 60) }]}> 
+            <View style={styles.headerTop}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+              >
+                <Ionicons name="arrow-back" size={getResponsiveFontSize(24, 26, 28)} color="#1A1A1A" />
+              </TouchableOpacity>
+              <View style={styles.headerInfo}>
+                <Text style={[styles.patientName, { fontSize: getResponsiveFontSize(18, 20, 22) }]}> 
+                  {patient?.name || 'Paciente'}
+                </Text>
+                <Text style={[styles.appointmentInfo, { fontSize: getResponsiveFontSize(14, 15, 16) }]}> 
+                  {appointment?.specialty ? appointment.specialty : 'Cita: '}{appointment?.date ? ` - ${appointment.date}` : ''}
+                </Text>
+              </View>
+              <View style={styles.headerRight} />
             </View>
-            <View style={styles.headerRight} />
+          </View>
+
+          {/* Messages */}
+          <ScrollView
+            ref={scrollViewRef}
+            style={styles.messagesContainer}
+            contentContainerStyle={styles.messagesContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {messages.map(renderMessage)}
+          </ScrollView>
+
+          {/* Message Input */}
+          <View style={styles.inputContainer}>
+            <View style={[styles.inputWrapper, { paddingHorizontal: getResponsivePadding(20, 40, 60) }]}> 
+              <TouchableOpacity style={styles.attachButton} onPress={handleAttachment}>
+                <Ionicons name="add-circle-outline" size={getResponsiveFontSize(24, 26, 28)} color="#007AFF" />
+              </TouchableOpacity>
+              <TextInput
+                style={[styles.messageInput, { fontSize: getResponsiveFontSize(14, 15, 16) }]}
+                placeholder="Escribe un mensaje..."
+                placeholderTextColor="#999"
+                value={message}
+                onChangeText={setMessage}
+                multiline
+              />
+              <TouchableOpacity
+                style={styles.sendButton}
+                onPress={handleSendMessage}
+                disabled={!message.trim()}
+              >
+                <Ionicons
+                  name="send"
+                  size={getResponsiveFontSize(20, 22, 24)}
+                  color={message.trim() ? '#007AFF' : '#CCC'}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-
-        {/* Messages */}
-        <ScrollView
-          style={styles.messagesContainer}
-          contentContainerStyle={styles.messagesContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {messages.map(renderMessage)}
-        </ScrollView>
-
-        {/* Message Input */}
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.inputContainer}
-        >
-          <View style={[styles.inputWrapper, { paddingHorizontal: getResponsivePadding(20, 40, 60) }]}>
-            <TextInput
-              style={[styles.messageInput, { fontSize: getResponsiveFontSize(14, 15, 16) }]}
-              placeholder="Escribe un mensaje..."
-              value={message}
-              onChangeText={setMessage}
-              multiline
-            />
-            <TouchableOpacity
-              style={styles.sendButton}
-              onPress={handleSendMessage}
-              disabled={!message.trim()}
-            >
-              <Ionicons
-                name="send"
-                size={getResponsiveFontSize(20, 22, 24)}
-                color={message.trim() ? '#007AFF' : '#CCC'}
-              />
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
-      </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  keyboardAvoidingView: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',
@@ -239,6 +285,12 @@ const styles = StyleSheet.create({
     paddingVertical: getResponsiveSpacing(12, 16, 20),
     gap: 12,
   },
+  attachButton: {
+    padding: 8,
+    marginRight: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   messageInput: {
     flex: 1,
     backgroundColor: '#F0F0F0',
@@ -247,9 +299,31 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     maxHeight: 100,
     minHeight: 44,
+    color: '#1A1A1A',
   },
   sendButton: {
     padding: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bottomBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+    paddingVertical: 6,
+  },
+  bottomBarItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottomBarText: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
   },
 });
 
