@@ -212,17 +212,16 @@ export const ChatProvider = ({ children }) => {
   const value = {
     ...state,
     dispatch,
-    sendMessage: (conversationId, text) => {
+    sendMessage: (conversationId, text, audioUri) => {
       const message = {
         id: Date.now(),
         text,
         sender: 'patient',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         status: 'sending',
+        ...(audioUri ? { audio: audioUri } : {}),
       };
-      
       dispatch({ type: 'ADD_MESSAGE', payload: { conversationId, message } });
-      
       // Simular envío exitoso
       setTimeout(() => {
         dispatch({

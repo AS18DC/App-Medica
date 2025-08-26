@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useChat } from '../../context/ChatContext';
@@ -17,6 +18,7 @@ import MessageStatus from '../../components/MessageStatus';
 import TypingIndicator from '../../components/TypingIndicator';
 import ChatAttachment from '../../components/ChatAttachment';
 import { isWeb, getResponsiveFontSize, getResponsivePadding } from '../../utils/responsive';
+import AudioRecorder from '../../components/AudioRecorder';
 
 const ChatScreen = ({ navigation, route }) => {
   const { doctor, conversationId } = route.params;
@@ -31,6 +33,14 @@ const ChatScreen = ({ navigation, route }) => {
   
   const [message, setMessage] = useState('');
   const [isAttaching, setIsAttaching] = useState(false);
+  const [showAudioMenu, setShowAudioMenu] = useState(false);
+  // Enviar audio grabado
+  const handleSendAudio = (audioUri) => {
+    if (conversationId && audioUri) {
+      sendMessage(conversationId, '', audioUri); // Se envía el audio, texto vacío
+      setShowAudioMenu(false);
+    }
+  };
   const scrollViewRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -96,13 +106,6 @@ const ChatScreen = ({ navigation, route }) => {
           msg.sender === 'patient' ? styles.patientBubble : styles.doctorBubble,
         ]}
       >
-        {msg.attachment && (
-          <ChatAttachment 
-            attachment={msg.attachment} 
-            onPress={() => console.log('Abrir archivo:', msg.attachment)}
-            style={styles.attachment}
-          />
-        )}
         {msg.text && (
           <Text
             style={[
@@ -113,7 +116,22 @@ const ChatScreen = ({ navigation, route }) => {
             {msg.text}
           </Text>
         )}
-        <View style={styles.messageFooter}>
+        {msg.audio && (
+          <TouchableOpacity
+            style={styles.audioMessage}
+            onPress={() => {
+              import('expo-av').then(({ Audio }) => {
+                Audio.Sound.createAsync({ uri: msg.audio }).then(({ sound }) => {
+                  sound.playAsync();
+                });
+              });
+            }}
+          >
+            <Ionicons name="play" size={24} color="#007AFF" />
+            <Text style={styles.audioText}>Audio</Text>
+          </TouchableOpacity>
+        )}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' }}>
           <Text
             style={[
               styles.timestamp,
@@ -163,7 +181,23 @@ const ChatScreen = ({ navigation, route }) => {
 
         {/* Message Input */}
         <View style={styles.inputContainer}>
-          {/* Attachment menu (now a row above the input) */}
+          {/* Modal de audio tipo pestaña temporal */}
+          <Modal
+            visible={showAudioMenu}
+            animationType="slide"
+            transparent
+            onRequestClose={() => setShowAudioMenu(false)}
+          >
+            <View style={styles.audioModalOverlay}>
+              <View style={styles.audioModalSheet}>
+                <AudioRecorder 
+                  onSend={handleSendAudio}
+                  onCancel={() => setShowAudioMenu(false)}
+                />
+              </View>
+            </View>
+          </Modal>
+          {/* Menú de attachments si está activo */}
           {isAttaching && (
             <View style={styles.attachmentMenuRow}>
               <TouchableOpacity style={styles.attachmentMenuItem} onPress={handleAttachImage}>
@@ -180,32 +214,38 @@ const ChatScreen = ({ navigation, route }) => {
               </TouchableOpacity>
             </View>
           )}
-          <View style={styles.inputWrapper}>
-            <TouchableOpacity style={styles.attachButton} onPress={handleAttachment}>
-              <Ionicons name="add-circle-outline" size={24} color="#007AFF" />
-            </TouchableOpacity>
-            <TextInput
-              ref={inputRef}
-              style={styles.textInput}
-              placeholder="Escribe un mensaje..."
-              value={message}
-              onChangeText={setMessage}
-              multiline
-              maxLength={500}
-              onSubmitEditing={handleSendMessage}
-            />
-            <TouchableOpacity
-              style={[styles.sendButton, !message.trim() && styles.sendButtonDisabled]}
-              onPress={handleSendMessage}
-              disabled={!message.trim()}
-            >
-              <Ionicons
-                name="send"
-                size={20}
-                color={message.trim() ? '#007AFF' : '#CCC'}
+          {/* Input y controles solo si no está el menú de audio */}
+          {!showAudioMenu && (
+            <View style={styles.inputWrapper}>
+              <TouchableOpacity style={styles.attachButton} onPress={handleAttachment}>
+                <Ionicons name="add-circle-outline" size={24} color="#007AFF" />
+              </TouchableOpacity>
+              <TextInput
+                ref={inputRef}
+                style={styles.textInput}
+                placeholder="Escribe un mensaje..."
+                value={message}
+                onChangeText={setMessage}
+                multiline
+                maxLength={500}
+                onSubmitEditing={handleSendMessage}
               />
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                style={[styles.sendButton, !message.trim() && styles.sendButtonDisabled]}
+                onPress={handleSendMessage}
+                disabled={!message.trim()}
+              >
+                <Ionicons
+                  name="send"
+                  size={20}
+                  color={message.trim() ? '#007AFF' : '#CCC'}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.audioButton} onPress={() => setShowAudioMenu(true)}>
+                <Ionicons name="mic" size={22} color="#007AFF" />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -376,6 +416,47 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     marginTop: 2,
   },
+  audioModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+  },
+  audioModalSheet: {
+    marginTop: 40,
+    width: '90%',
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+    alignItems: 'center',
+  },
+  audioButton: {
+    padding: 8,
+    marginLeft: 4,
+    backgroundColor: '#F0F0F0',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  audioMessage: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginTop: 4,
+  },
+  audioText: {
+    color: '#007AFF',
+    fontSize: 15,
+    marginLeft: 8,
+  },
 });
 
-export default ChatScreen; 
+export default ChatScreen;

@@ -10,13 +10,26 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import MessageStatus from '../../components/MessageStatus';
+import AudioRecorder from '../../components/AudioRecorder';
 // ...existing code...
 import { isWeb, webStyles, getResponsiveSpacing, getResponsiveFontSize, getResponsivePadding } from '../../utils/responsive';
 
 const DoctorChat = ({ navigation, route }) => {
+  const [showAudioMenu, setShowAudioMenu] = useState(false);
+  const handleSendAudio = (audioUri) => {
+    const newMessage = {
+      id: messages.length + 1,
+      audio: audioUri,
+      sender: 'doctor',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      status: 'sent',
+    };
+    setMessages([...messages, newMessage]);
+  };
   const [isAttaching, setIsAttaching] = useState(false);
   const scrollViewRef = useRef(null);
 
@@ -101,15 +114,33 @@ const DoctorChat = ({ navigation, route }) => {
           msg.sender === 'doctor' ? styles.doctorBubble : styles.patientBubble,
         ]}
       >
-        <Text
-          style={[
-            styles.messageText,
-            msg.sender === 'doctor' ? styles.doctorMessageText : styles.patientMessageText,
-            { fontSize: getResponsiveFontSize(14, 15, 16) },
-          ]}
-        >
-          {msg.text}
-        </Text>
+        {msg.text && (
+          <Text
+            style={[
+              styles.messageText,
+              msg.sender === 'doctor' ? styles.doctorMessageText : styles.patientMessageText,
+              { fontSize: getResponsiveFontSize(14, 15, 16) },
+            ]}
+          >
+            {msg.text}
+          </Text>
+        )}
+        {msg.audio && (
+          <TouchableOpacity
+            style={styles.audioMessage}
+            onPress={() => {
+              // Reproducir audio
+              import('expo-av').then(({ Audio }) => {
+                Audio.Sound.createAsync({ uri: msg.audio }).then(({ sound }) => {
+                  sound.playAsync();
+                });
+              });
+            }}
+          >
+            <Ionicons name="play" size={24} color="#007AFF" />
+            <Text style={styles.audioText}>Audio</Text>
+          </TouchableOpacity>
+        )}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' }}>
           <Text
             style={[
@@ -166,9 +197,59 @@ const DoctorChat = ({ navigation, route }) => {
             {messages.map(renderMessage)}
           </ScrollView>
 
-          {/* Message Input */}
           <View style={styles.inputContainer}>
-            {/* Attachment menu (now a row above the input) */}
+            {/* Modal de audio tipo pestaña temporal */}
+            <Modal
+              visible={showAudioMenu}
+              animationType="slide"
+              transparent
+              onRequestClose={() => setShowAudioMenu(false)}
+            >
+              <View style={styles.audioModalOverlay}>
+                <View style={styles.audioModalSheet}>
+                  <AudioRecorder 
+                    onSend={(audioUri) => {
+                      handleSendAudio(audioUri);
+                      setShowAudioMenu(false);
+                    }}
+                    onCancel={() => setShowAudioMenu(false)}
+                  />
+                </View>
+              </View>
+            </Modal>
+            {/* Input y controles solo si no está el menú de audio */}
+            {!showAudioMenu && (
+              <View style={[styles.inputWrapper, styles.inputWrapperFit, { paddingHorizontal: getResponsivePadding(20, 40, 60) }]}> 
+                <View style={styles.inputBoxWithIcon}>
+                  <TouchableOpacity style={styles.attachButtonInBox} onPress={handleAttachment}>
+                    <Ionicons name="add-circle-outline" size={getResponsiveFontSize(24, 26, 28)} color="#007AFF" />
+                  </TouchableOpacity>
+                  <TextInput
+                    style={[styles.messageInput, styles.messageInputWithIcon, { fontSize: getResponsiveFontSize(14, 15, 16) }]}
+                    placeholder="Escribe un mensaje..."
+                    placeholderTextColor="#999"
+                    value={message}
+                    onChangeText={setMessage}
+                    multiline
+                  />
+                </View>
+                <TouchableOpacity
+                  style={styles.sendButton}
+                  onPress={handleSendMessage}
+                  disabled={!message.trim()}
+                >
+                  <Ionicons
+                    name="send"
+                    size={getResponsiveFontSize(20, 22, 24)}
+                    color={message.trim() ? '#007AFF' : '#CCC'}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.audioButton} onPress={() => setShowAudioMenu(true)}>
+                  <Ionicons name="mic" size={22} color="#007AFF" />
+                </TouchableOpacity>
+              </View>
+            )}
+            {/* Menú de attachments si está activo */}
             {isAttaching && (
               <View style={styles.attachmentMenuRow}>
                 <TouchableOpacity style={styles.attachmentMenuItem} onPress={handleAttachImage}>
@@ -185,30 +266,6 @@ const DoctorChat = ({ navigation, route }) => {
                 </TouchableOpacity>
               </View>
             )}
-            <View style={[styles.inputWrapper, { paddingHorizontal: getResponsivePadding(20, 40, 60) }]}> 
-              <TouchableOpacity style={styles.attachButton} onPress={handleAttachment}>
-                <Ionicons name="add-circle-outline" size={getResponsiveFontSize(24, 26, 28)} color="#007AFF" />
-              </TouchableOpacity>
-              <TextInput
-                style={[styles.messageInput, { fontSize: getResponsiveFontSize(14, 15, 16) }]}
-                placeholder="Escribe un mensaje..."
-                placeholderTextColor="#999"
-                value={message}
-                onChangeText={setMessage}
-                multiline
-              />
-              <TouchableOpacity
-                style={styles.sendButton}
-                onPress={handleSendMessage}
-                disabled={!message.trim()}
-              >
-                <Ionicons
-                  name="send"
-                  size={getResponsiveFontSize(20, 22, 24)}
-                  color={message.trim() ? '#007AFF' : '#CCC'}
-                />
-              </TouchableOpacity>
-            </View>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -217,6 +274,69 @@ const DoctorChat = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
+  audioModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+  },
+  audioModalSheet: {
+    marginTop: 40,
+    width: '90%',
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+    alignItems: 'center',
+  },
+  inputBoxWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    backgroundColor: '#F0F0F0',
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 0,
+    marginRight: 8,
+  },
+  attachButtonInBox: {
+    padding: 4,
+    marginRight: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  messageInputWithIcon: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    borderRadius: 0,
+    paddingHorizontal: 0,
+    paddingVertical: 12,
+    minHeight: 44,
+    color: '#1A1A1A',
+  },
+  inputWrapperFit: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  audioMessage: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0F0F0',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginVertical: 4,
+  },
+  audioText: {
+    marginLeft: 8,
+    color: '#333',
+    fontSize: 14,
+  },
   keyboardAvoidingView: {
     flex: 1,
   },
