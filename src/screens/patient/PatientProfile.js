@@ -131,9 +131,8 @@ const PatientProfile = ({ navigation, route }) => {
             <View style={styles.userDetails}>
               <Text style={styles.userName}>{user.name}</Text>
               <Text style={styles.userEmail}>{user.email}</Text>
-              <Text style={styles.membershipText}>
-                Miembro desde {user.membershipDate}
-              </Text>
+              <Text style={styles.membershipText}>Miembro desde {user.membershipDate}</Text>
+
             </View>
           </View>
           <TouchableOpacity 
@@ -141,7 +140,6 @@ const PatientProfile = ({ navigation, route }) => {
             onPress={() => navigation.navigate('EditPatientProfile', { userData: user })}
           >
             <Ionicons name="pencil" size={20} color="#007AFF" />
-            <Text style={styles.editButtonText}>Editar</Text>
           </TouchableOpacity>
         </View>
 
@@ -252,12 +250,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   userEmail: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#666',
     marginBottom: 4,
   },
   membershipText: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#007AFF',
     fontWeight: '500',
   },
