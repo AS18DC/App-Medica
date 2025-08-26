@@ -198,6 +198,23 @@ const DoctorChat = ({ navigation, route }) => {
           </ScrollView>
 
           <View style={styles.inputContainer}>
+            {/* Menú de attachments si está activo */}
+            {isAttaching && (
+              <View style={styles.attachmentMenuRow}>
+                <TouchableOpacity style={styles.attachmentMenuItem} onPress={handleAttachImage}>
+                  <Ionicons name="image-outline" size={28} color="#007AFF" />
+                  <Text style={styles.attachmentMenuText}>Imagen</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.attachmentMenuItem} onPress={handleAttachDocument}>
+                  <Ionicons name="document-outline" size={28} color="#007AFF" />
+                  <Text style={styles.attachmentMenuText}>Documento</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.attachmentMenuItem} onPress={handleAttachCamera}>
+                  <Ionicons name="camera-outline" size={28} color="#007AFF" />
+                  <Text style={styles.attachmentMenuText}>Cámara</Text>
+                </TouchableOpacity>
+              </View>
+            )}
             {/* Modal de audio tipo pestaña temporal */}
             <Modal
               visible={showAudioMenu}
@@ -246,23 +263,6 @@ const DoctorChat = ({ navigation, route }) => {
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.audioButton} onPress={() => setShowAudioMenu(true)}>
                   <Ionicons name="mic" size={22} color="#007AFF" />
-                </TouchableOpacity>
-              </View>
-            )}
-            {/* Menú de attachments si está activo */}
-            {isAttaching && (
-              <View style={styles.attachmentMenuRow}>
-                <TouchableOpacity style={styles.attachmentMenuItem} onPress={handleAttachImage}>
-                  <Ionicons name="image-outline" size={28} color="#007AFF" />
-                  <Text style={styles.attachmentMenuText}>Imagen</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.attachmentMenuItem} onPress={handleAttachDocument}>
-                  <Ionicons name="document-outline" size={28} color="#007AFF" />
-                  <Text style={styles.attachmentMenuText}>Documento</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.attachmentMenuItem} onPress={handleAttachCamera}>
-                  <Ionicons name="camera-outline" size={28} color="#007AFF" />
-                  <Text style={styles.attachmentMenuText}>Cámara</Text>
                 </TouchableOpacity>
               </View>
             )}

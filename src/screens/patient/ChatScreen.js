@@ -181,22 +181,6 @@ const ChatScreen = ({ navigation, route }) => {
 
         {/* Message Input */}
         <View style={styles.inputContainer}>
-          {/* Modal de audio tipo pestaña temporal */}
-          <Modal
-            visible={showAudioMenu}
-            animationType="slide"
-            transparent
-            onRequestClose={() => setShowAudioMenu(false)}
-          >
-            <View style={styles.audioModalOverlay}>
-              <View style={styles.audioModalSheet}>
-                <AudioRecorder 
-                  onSend={handleSendAudio}
-                  onCancel={() => setShowAudioMenu(false)}
-                />
-              </View>
-            </View>
-          </Modal>
           {/* Menú de attachments si está activo */}
           {isAttaching && (
             <View style={styles.attachmentMenuRow}>
@@ -214,6 +198,22 @@ const ChatScreen = ({ navigation, route }) => {
               </TouchableOpacity>
             </View>
           )}
+          {/* Modal de audio tipo pestaña temporal */}
+          <Modal
+            visible={showAudioMenu}
+            animationType="slide"
+            transparent
+            onRequestClose={() => setShowAudioMenu(false)}
+          >
+            <View style={styles.audioModalOverlay}>
+              <View style={styles.audioModalSheet}>
+                <AudioRecorder 
+                  onSend={handleSendAudio}
+                  onCancel={() => setShowAudioMenu(false)}
+                />
+              </View>
+            </View>
+          </Modal>
           {/* Input y controles solo si no está el menú de audio */}
           {!showAudioMenu && (
             <View style={styles.inputWrapper}>
