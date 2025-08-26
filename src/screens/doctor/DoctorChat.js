@@ -11,45 +11,104 @@ import {
   Platform,
   Alert,
   Modal,
+  Image,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import MessageStatus from '../../components/MessageStatus';
-import AudioRecorder from '../../components/AudioRecorder';
-// ...existing code...
+import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import { Audio } from 'expo-audio';
+import { Video } from 'expo-video';
 import { isWeb, webStyles, getResponsiveSpacing, getResponsiveFontSize, getResponsivePadding } from '../../utils/responsive';
 
 const DoctorChat = ({ navigation, route }) => {
-  const [showAudioMenu, setShowAudioMenu] = useState(false);
-  const handleSendAudio = (audioUri) => {
-    const newMessage = {
-      id: messages.length + 1,
-      audio: audioUri,
-      sender: 'doctor',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      status: 'sent',
-    };
-    setMessages([...messages, newMessage]);
-  };
   const [isAttaching, setIsAttaching] = useState(false);
   const scrollViewRef = useRef(null);
+  // Add state for recording
+  const [recording, setRecording] = useState(null);
+  const [playingSound, setPlayingSound] = useState(null);
+  const [playingId, setPlayingId] = useState(null);
 
   // Handlers for each attachment type
-  const handleAttachImage = () => {
+  // Image picker
+  const handleAttachImage = async () => {
     setIsAttaching(false);
-    console.log('Adjuntar imagen');
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) return;
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      // Add image as a message (stub)
+      setMessages([...messages, { id: messages.length + 1, image: result.assets[0].uri, sender: 'doctor', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
+    }
   };
-  const handleAttachDocument = () => {
+  // Document picker (send filename and uri)
+  const handleAttachDocument = async () => {
     setIsAttaching(false);
-    console.log('Adjuntar documento');
+    const result = await DocumentPicker.getDocumentAsync({ type: '*/*' });
+    if (result.type === 'success' && result.uri) {
+      setMessages([...messages, { id: messages.length + 1, document: { uri: result.uri, name: result.name || 'Documento' }, sender: 'doctor', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
+    }
   };
-  const handleAttachCamera = () => {
+  // Camera
+  const handleAttachCamera = async () => {
     setIsAttaching(false);
-    console.log('Tomar foto');
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) return;
+    const result = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setMessages([...messages, { id: messages.length + 1, image: result.assets[0].uri, sender: 'doctor', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
+    }
+  };
+  // Audio recording logic (press and hold)
+  const handleAudioRecordStart = async () => {
+    const { status } = await Audio.requestPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permiso requerido', 'Se requiere acceso al micrófono.');
+      return;
+    }
+    await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+    const rec = new Audio.Recording();
+    await rec.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
+    await rec.startAsync();
+    setRecording(rec);
+  };
+  const handleAudioRecordStop = async () => {
+    if (recording) {
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+      setRecording(null);
+      setMessages([...messages, { id: messages.length + 1, audio: uri, sender: 'doctor', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
+    }
+  };
+
+  // Audio playback logic
+  const handlePlayAudio = async (uri, id) => {
+    if (playingSound) {
+      await playingSound.stopAsync();
+      await playingSound.unloadAsync();
+      setPlayingSound(null);
+      setPlayingId(null);
+      if (playingId === id) return; // toggle pause
+    }
+    const { sound } = await Audio.Sound.createAsync({ uri });
+    setPlayingSound(sound);
+    setPlayingId(id);
+    await sound.playAsync();
+    sound.setOnPlaybackStatusUpdate((status) => {
+      if (status.didJustFinish) {
+        setPlayingSound(null);
+        setPlayingId(null);
+      }
+    });
   };
 
   // Toggle attachment menu
   const handleAttachment = () => {
     setIsAttaching((prev) => !prev);
+  };
+  const handleSendAudio = () => {
+    console.log('Send audio message');
   };
   const { patient, appointment } = route.params || {};
   const [message, setMessage] = useState('');
@@ -114,6 +173,25 @@ const DoctorChat = ({ navigation, route }) => {
           msg.sender === 'doctor' ? styles.doctorBubble : styles.patientBubble,
         ]}
       >
+        {/* Image */}
+        {msg.image && (
+          <Image source={{ uri: msg.image }} style={{ width: 180, height: 180, borderRadius: 12, marginBottom: 8 }} resizeMode="cover" />
+        )}
+        {/* Document */}
+        {msg.document && (
+          <TouchableOpacity onPress={() => Linking.openURL(msg.document.uri)} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <Ionicons name="document-outline" size={24} color="#007AFF" />
+            <Text style={{ color: '#007AFF', marginLeft: 6, textDecorationLine: 'underline' }}>{msg.document.name || 'Documento'}</Text>
+          </TouchableOpacity>
+        )}
+        {/* Audio */}
+        {msg.audio && (
+          <TouchableOpacity onPress={() => handlePlayAudio(msg.audio, msg.id)} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <Ionicons name={playingId === msg.id ? 'pause' : 'play'} size={24} color="#007AFF" />
+            <Text style={{ color: '#007AFF', marginLeft: 6 }}>{playingId === msg.id ? 'Pausar audio' : 'Reproducir audio'}</Text>
+          </TouchableOpacity>
+        )}
+        {/* Text */}
         {msg.text && (
           <Text
             style={[
@@ -124,22 +202,6 @@ const DoctorChat = ({ navigation, route }) => {
           >
             {msg.text}
           </Text>
-        )}
-        {msg.audio && (
-          <TouchableOpacity
-            style={styles.audioMessage}
-            onPress={() => {
-              // Reproducir audio
-              import('expo-av').then(({ Audio }) => {
-                Audio.Sound.createAsync({ uri: msg.audio }).then(({ sound }) => {
-                  sound.playAsync();
-                });
-              });
-            }}
-          >
-            <Ionicons name="play" size={24} color="#007AFF" />
-            <Text style={styles.audioText}>Audio</Text>
-          </TouchableOpacity>
         )}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' }}>
           <Text
@@ -163,109 +225,80 @@ const DoctorChat = ({ navigation, route }) => {
       <KeyboardAvoidingView
         style={styles.keyboardAvoidingView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
       >
-        <View style={[styles.content, isWeb && webStyles.container]}>
-          {/* Header */}
-          <View style={[styles.header, { paddingHorizontal: getResponsivePadding(20, 40, 60) }]}> 
-            <View style={styles.headerTop}>
-              <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => navigation.goBack()}
-              >
-                <Ionicons name="arrow-back" size={getResponsiveFontSize(24, 26, 28)} color="#1A1A1A" />
-              </TouchableOpacity>
-              <View style={styles.headerInfo}>
-                <Text style={[styles.patientName, { fontSize: getResponsiveFontSize(18, 20, 22) }]}> 
-                  {patient?.name || 'Paciente'}
-                </Text>
-                <Text style={[styles.appointmentInfo, { fontSize: getResponsiveFontSize(14, 15, 16) }]}> 
-                  {appointment?.specialty ? appointment.specialty : 'Cita: '}{appointment?.date ? ` - ${appointment.date}` : ''}
-                </Text>
-              </View>
-              <View style={styles.headerRight} />
-            </View>
+        {/* Header igual al paciente */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#1A1A1A" />
+          </TouchableOpacity>
+          <View style={styles.headerInfo}>
+            <Text style={styles.patientName}>{patient?.name || 'Paciente'}</Text>
+            <Text style={styles.appointmentInfo}>{appointment?.specialty || 'Especialidad'}</Text>
           </View>
+          <TouchableOpacity style={styles.moreButton}>
+            <Ionicons name="ellipsis-vertical" size={20} color="#666" />
+          </TouchableOpacity>
+        </View>
 
-          {/* Messages */}
-          <ScrollView
-            ref={scrollViewRef}
-            style={styles.messagesContainer}
-            contentContainerStyle={styles.messagesContent}
-            showsVerticalScrollIndicator={false}
-          >
-            {messages.map(renderMessage)}
-          </ScrollView>
+        {/* Messages */}
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.messagesContainer}
+          contentContainerStyle={styles.messagesContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {messages.map(renderMessage)}
+        </ScrollView>
 
-          <View style={styles.inputContainer}>
-            {/* Menú de attachments si está activo */}
-            {isAttaching && (
-              <View style={styles.attachmentMenuRow}>
-                <TouchableOpacity style={styles.attachmentMenuItem} onPress={handleAttachImage}>
-                  <Ionicons name="image-outline" size={28} color="#007AFF" />
-                  <Text style={styles.attachmentMenuText}>Imagen</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.attachmentMenuItem} onPress={handleAttachDocument}>
-                  <Ionicons name="document-outline" size={28} color="#007AFF" />
-                  <Text style={styles.attachmentMenuText}>Documento</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.attachmentMenuItem} onPress={handleAttachCamera}>
-                  <Ionicons name="camera-outline" size={28} color="#007AFF" />
-                  <Text style={styles.attachmentMenuText}>Cámara</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-            {/* Modal de audio tipo pestaña temporal */}
-            <Modal
-              visible={showAudioMenu}
-              animationType="slide"
-              transparent
-              onRequestClose={() => setShowAudioMenu(false)}
-            >
-              <View style={styles.audioModalOverlay}>
-                <View style={styles.audioModalSheet}>
-                  <AudioRecorder 
-                    onSend={(audioUri) => {
-                      handleSendAudio(audioUri);
-                      setShowAudioMenu(false);
-                    }}
-                    onCancel={() => setShowAudioMenu(false)}
-                  />
-                </View>
-              </View>
-            </Modal>
-            {/* Input y controles solo si no está el menú de audio */}
-            {!showAudioMenu && (
-              <View style={[styles.inputWrapper, styles.inputWrapperFit, { paddingHorizontal: getResponsivePadding(20, 40, 60) }]}> 
-                <View style={styles.inputBoxWithIcon}>
-                  <TouchableOpacity style={styles.attachButtonInBox} onPress={handleAttachment}>
-                    <Ionicons name="add-circle-outline" size={getResponsiveFontSize(24, 26, 28)} color="#007AFF" />
-                  </TouchableOpacity>
-                  <TextInput
-                    style={[styles.messageInput, styles.messageInputWithIcon, { fontSize: getResponsiveFontSize(14, 15, 16) }]}
-                    placeholder="Escribe un mensaje..."
-                    placeholderTextColor="#999"
-                    value={message}
-                    onChangeText={setMessage}
-                    multiline
-                  />
-                </View>
+        {/* Message Input igual al paciente */}
+        <View style={styles.inputContainer}>
+          {isAttaching && (
+            <View style={styles.attachmentMenuRow}>
+              <TouchableOpacity style={styles.attachmentMenuItem} onPress={handleAttachImage}>
+                <Ionicons name="image-outline" size={28} color="#007AFF" />
+                <Text style={styles.attachmentMenuText}>Imagen</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.attachmentMenuItem} onPress={handleAttachDocument}>
+                <Ionicons name="document-outline" size={28} color="#007AFF" />
+                <Text style={styles.attachmentMenuText}>Documento</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.attachmentMenuItem} onPress={handleAttachCamera}>
+                <Ionicons name="camera-outline" size={28} color="#007AFF" />
+                <Text style={styles.attachmentMenuText}>Cámara</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          <View style={styles.inputWrapper}>
+            <TouchableOpacity style={styles.attachButton} onPress={handleAttachment}>
+              <Ionicons name="add-circle-outline" size={24} color="#007AFF" />
+            </TouchableOpacity>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Escribe un mensaje..."
+              value={message}
+              onChangeText={setMessage}
+              multiline
+              maxLength={500}
+              onSubmitEditing={handleSendMessage}
+            />
+            <View style={styles.iconWrapper}>
+              {message.trim() ? (
                 <TouchableOpacity
                   style={styles.sendButton}
                   onPress={handleSendMessage}
-                  disabled={!message.trim()}
                 >
-                  <Ionicons
-                    name="send"
-                    size={getResponsiveFontSize(20, 22, 24)}
-                    color={message.trim() ? '#007AFF' : '#CCC'}
-                  />
+                  <Ionicons name="send" size={22} color="#007AFF" />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.audioButton} onPress={() => setShowAudioMenu(true)}>
+              ) : (
+                <TouchableOpacity
+                  style={styles.sendButton}
+                  onPressIn={handleAudioRecordStart}
+                  onPressOut={handleAudioRecordStop}
+                >
                   <Ionicons name="mic" size={22} color="#007AFF" />
                 </TouchableOpacity>
-              </View>
-            )}
+              )}
+            </View>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -274,118 +307,50 @@ const DoctorChat = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  audioModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.2)',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-  },
-  audioModalSheet: {
-    marginTop: 40,
-    width: '90%',
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
-    alignItems: 'center',
-  },
-  inputBoxWithIcon: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    backgroundColor: '#F0F0F0',
-    borderRadius: 20,
-    paddingHorizontal: 8,
-    paddingVertical: 0,
-    marginRight: 8,
-  },
-  attachButtonInBox: {
-    padding: 4,
-    marginRight: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  messageInputWithIcon: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    borderRadius: 0,
-    paddingHorizontal: 0,
-    paddingVertical: 12,
-    minHeight: 44,
-    color: '#1A1A1A',
-  },
-  inputWrapperFit: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  audioMessage: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F0F0F0',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginVertical: 4,
-  },
-  audioText: {
-    marginLeft: 8,
-    color: '#333',
-    fontSize: 14,
-  },
-  keyboardAvoidingView: {
-    flex: 1,
-  },
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
-  content: {
+  keyboardAvoidingView: {
     flex: 1,
   },
   header: {
-    paddingTop: getResponsiveSpacing(20, 30, 40),
-    paddingBottom: getResponsiveSpacing(16, 20, 24),
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-    backgroundColor: '#FFFFFF',
-  },
-  headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
   backButton: {
-    padding: 8,
+    padding: 4,
+    marginRight: 12,
   },
   headerInfo: {
     flex: 1,
-    alignItems: 'center',
   },
   patientName: {
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '600',
     color: '#1A1A1A',
-    marginBottom: 2,
   },
   appointmentInfo: {
+    fontSize: 14,
     color: '#666',
   },
-  headerRight: {
-    width: 40,
+  moreButton: {
+    padding: 4,
   },
   messagesContainer: {
     flex: 1,
   },
   messagesContent: {
-    padding: getResponsiveSpacing(16, 20, 24),
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   messageContainer: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
   doctorMessage: {
     alignItems: 'flex-end',
@@ -397,15 +362,27 @@ const styles = StyleSheet.create({
     maxWidth: '80%',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 18,
+    borderRadius: 20,
   },
   doctorBubble: {
     backgroundColor: '#007AFF',
+    borderBottomRightRadius: 4,
   },
   patientBubble: {
-    backgroundColor: '#E0E0E0',
+    backgroundColor: '#FFFFFF',
+    borderBottomLeftRadius: 4,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   messageText: {
+    fontSize: 16,
+    lineHeight: 22,
     marginBottom: 4,
   },
   doctorMessageText: {
@@ -415,59 +392,48 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
   },
   messageTime: {
-    color: '#999',
+    fontSize: 12,
+  },
+  doctorTimestamp: {
+    color: 'rgba(255, 255, 255, 0.7)',
     textAlign: 'right',
   },
+  patientTimestamp: {
+    color: '#999',
+  },
   inputContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
+    borderTopColor: '#F0F0F0',
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingVertical: getResponsiveSpacing(12, 16, 20),
-    gap: 12,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 24,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   attachButton: {
     padding: 8,
     marginRight: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  messageInput: {
+  textInput: {
     flex: 1,
-    backgroundColor: '#F0F0F0',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    maxHeight: 100,
-    minHeight: 44,
+    fontSize: 16,
     color: '#1A1A1A',
+    maxHeight: 100,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
   },
   sendButton: {
-    padding: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 8,
+    marginLeft: 4,
   },
-  bottomBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-    paddingVertical: 6,
-  },
-  bottomBarItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bottomBarText: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
+  sendButtonDisabled: {
+    opacity: 0.5,
   },
   attachmentMenuRow: {
     flexDirection: 'row',
@@ -495,6 +461,17 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     marginTop: 2,
   },
+  audioButton: {
+    padding: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 4,
+  },
+  iconWrapper: {
+    width: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
 
-export default DoctorChat; 
+export default DoctorChat;
