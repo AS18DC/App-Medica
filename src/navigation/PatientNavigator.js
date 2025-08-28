@@ -9,10 +9,11 @@ import PatientClinics from '../screens/patient/PatientClinics';
 import PatientAppointments from '../screens/patient/PatientAppointments';
 import PatientProfile from '../screens/patient/PatientProfile';
 import EditPatientProfile from '../screens/patient/EditPatientProfile';
-import EditFieldScreen from '../screens/patient/EditFieldScreen';
-import EditSelectionScreen from '../screens/patient/EditSelectionScreen';
-import EditPhoneScreen from '../screens/patient/EditPhoneScreen';
-import EditDateScreen from '../screens/patient/EditDateScreen';
+import EditFieldScreen from '../screens/shared/EditFieldScreen';
+import EditSelectionScreen from '../screens/shared/EditSelectionScreen';
+import EditMultiSelectionScreen from '../screens/shared/EditMultiSelectionScreen';
+import EditPhoneScreen from '../screens/shared/EditPhoneScreen';
+import EditDateScreen from '../screens/shared/EditDateScreen';
 import PatientChat from '../screens/patient/PatientChat';
 import PatientPrescriptions from '../screens/patient/PatientPrescriptions';
 import DoctorDetail from '../screens/patient/DoctorDetail';
@@ -65,6 +66,7 @@ const PatientProfileStack = () => (
     <Stack.Screen name="EditPatientProfile" component={EditPatientProfile} />
     <Stack.Screen name="EditFieldScreen" component={EditFieldScreen} />
     <Stack.Screen name="EditSelectionScreen" component={EditSelectionScreen} />
+    <Stack.Screen name="EditMultiSelectionScreen" component={EditMultiSelectionScreen} />
     <Stack.Screen name="EditPhoneScreen" component={EditPhoneScreen} />
     <Stack.Screen name="EditDateScreen" component={EditDateScreen} />
     <Stack.Screen name="PatientAppointmentsMain" component={PatientAppointments} />

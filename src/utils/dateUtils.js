@@ -164,19 +164,26 @@ export const isValidDateComponents = (day, month, year) => {
 
 /**
  * Obtiene la edad a partir de una fecha de nacimiento
- * @param {Date} birthDate - Fecha de nacimiento
+ * @param {Date|string} birthDate - Fecha de nacimiento como Date o string ISO
  * @returns {number} - Edad en años
  */
 export const getAge = (birthDate) => {
-  if (!birthDate || !(birthDate instanceof Date) || isNaN(birthDate.getTime())) {
+  let dateObj = birthDate;
+  
+  // Si es string, convertirlo a Date
+  if (typeof birthDate === 'string') {
+    dateObj = new Date(birthDate);
+  }
+  
+  if (!dateObj || !(dateObj instanceof Date) || isNaN(dateObj.getTime())) {
     return 0;
   }
   
   const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
+  let age = today.getFullYear() - dateObj.getFullYear();
+  const monthDiff = today.getMonth() - dateObj.getMonth();
   
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dateObj.getDate())) {
     age--;
   }
   
@@ -185,7 +192,7 @@ export const getAge = (birthDate) => {
 
 /**
  * Formatea una fecha para mostrar en la interfaz de usuario
- * @param {Date|string} date - Fecha como Date o string DD/MM/AAAA
+ * @param {Date|string} date - Fecha como Date, string DD/MM/AAAA o string ISO
  * @param {string} format - Formato deseado ('long', 'short', 'string')
  * @returns {string} - Fecha formateada
  */
@@ -194,7 +201,13 @@ export const formatDateForDisplay = (date, format = 'long') => {
   
   // Si es string, convertirlo a Date
   if (typeof date === 'string') {
-    dateObj = parseDateFromString(date);
+    // Primero intentar parsear como string ISO
+    if (date.includes('-') || date.includes('T')) {
+      dateObj = new Date(date);
+    } else {
+      // Si no es ISO, intentar parsear como DD/MM/AAAA
+      dateObj = parseDateFromString(date);
+    }
   }
   
   if (!dateObj || !(dateObj instanceof Date) || isNaN(dateObj.getTime())) {

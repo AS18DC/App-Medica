@@ -10,7 +10,16 @@ import {
   TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { isWeb, webStyles } from "../../utils/responsive";
+import { 
+  isWeb, 
+  webStyles, 
+  isTabletScreen, 
+  isDesktopScreen, 
+  getResponsiveSpacing, 
+  getResponsiveFontSize, 
+  getResponsivePadding,
+  getResponsiveImageSize 
+} from "../../utils/responsive";
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -210,17 +219,23 @@ const EditSelectionScreen = ({ navigation, route }) => {
               onPress={() => handleSelection("Otra")}
             >
               <View style={styles.optionContent}>
-                {isEditingOther ? (
-                  <TextInput
-                    style={styles.otherTextInput}
-                    value={otherValue}
-                    onChangeText={setOtherValue}
-                    placeholder="Especificar valor personalizado"
-                    placeholderTextColor="#999"
-                    autoFocus={true}
-                    autoCapitalize="words"
-                    autoCorrect={false}
-                  />
+                                {isEditingOther ? (
+                  <View style={styles.otherInputContainer}>
+                    <TextInput
+                      style={styles.otherTextInput}
+                      value={otherValue}
+                      onChangeText={setOtherValue}
+                      placeholder="Especificar valor personalizado"
+                      placeholderTextColor="#999"
+                      autoFocus={true}
+                      autoCapitalize="words"
+                      autoCorrect={false}
+                      maxLength={20}
+                    />
+                    <Text style={styles.characterCount}>
+                      {otherValue.length}/20
+                    </Text>
+                  </View>
                 ) : (
                   <>
                     <Text style={[
@@ -250,44 +265,36 @@ const EditSelectionScreen = ({ navigation, route }) => {
           )}
         </ScrollView>
 
-        {/* Información adicional si existe */}
-        {validationRules?.info && (
-          <View style={styles.infoContainer}>
-            <Ionicons name="information-circle-outline" size={20} color="#007AFF" />
-            <Text style={styles.infoText}>{validationRules.info}</Text>
-          </View>
-        )}
-      </View>
-
-      {/* Botones de acción */}
-      <View style={styles.actionButtonsContainer}>
-        <TouchableOpacity
-          style={[
-            styles.saveButton,
-            !canSave() ? styles.saveButtonDisabled : null,
-          ]}
-          onPress={handleSave}
-          disabled={!canSave()}
-        >
-          <Ionicons
-            name="checkmark"
-            size={20}
-            color={canSave() ? "#007AFF" : "#999"}
-          />
-          <Text
+        {/* Botones de acción */}
+        <View style={styles.actionButtonsContainer}>
+          <TouchableOpacity
             style={[
-              styles.saveButtonText,
-              !canSave() ? styles.saveButtonTextDisabled : null,
+              styles.saveButton,
+              !canSave() ? styles.saveButtonDisabled : null,
             ]}
-          >
-            Guardar
-          </Text>
-        </TouchableOpacity>
+            onPress={handleSave}
+            disabled={!canSave()}
+            >
+            <Ionicons
+              name="checkmark"
+              size={20}
+              color={canSave() ? "#007AFF" : "#999"}
+              />
+            <Text
+              style={[
+                styles.saveButtonText,
+                !canSave() ? styles.saveButtonTextDisabled : null,
+              ]}
+              >
+              Guardar
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
-          <Ionicons name="close" size={20} color="#666" />
-          <Text style={styles.cancelButtonText}>Cancelar</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
+            <Ionicons name="close" size={20} color="#666" />
+            <Text style={styles.cancelButtonText}>Cancelar</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -296,58 +303,59 @@ const EditSelectionScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
-    ...(isWeb && webStyles.container),
+    backgroundColor: '#F8F9FA',
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
+    paddingHorizontal: getResponsivePadding(20, 30, 40),
+    paddingTop: getResponsiveSpacing(20, 25, 30),
+    paddingBottom: getResponsiveSpacing(16, 20, 24),
   },
   backButton: {
-    padding: 8,
+    padding: getResponsiveSpacing(8, 10, 12),
   },
   title: {
-    fontSize: 20,
+    fontSize: getResponsiveFontSize(20, 24, 28),
     fontWeight: "bold",
     color: "#1A1A1A",
   },
   placeholder: {
-    width: 40,
+    width: getResponsiveSpacing(40, 50, 60),
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingHorizontal: getResponsivePadding(20, 30, 40),
+    paddingTop: getResponsiveSpacing(20, 25, 30),
+    width: '100%',
     ...(isWeb && {
-      maxWidth: 600,
+      maxWidth: isDesktopScreen() ? 1200 : isTabletScreen() ? 1000 : 800,
       margin: '0 auto',
+      alignSelf: 'center',
     }),
   },
   descriptionContainer: {
-    marginBottom: 24,
+    marginBottom: getResponsiveSpacing(24, 30, 36),
   },
   descriptionText: {
-    fontSize: 16,
+    fontSize: getResponsiveFontSize(16, 18, 20),
     color: "#666",
     textAlign: "center",
   },
   optionsContainer: {
     flex: 0,
-    marginBottom: 20,
+    marginBottom: getResponsiveSpacing(20, 25, 30),
   },
   optionItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    marginBottom: 12,
+    borderRadius: getResponsiveSpacing(12, 16, 20),
+    paddingHorizontal: getResponsivePadding(20, 25, 30),
+    paddingVertical: getResponsiveSpacing(16, 20, 24),
+    marginBottom: getResponsiveSpacing(12, 15, 18),
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -368,16 +376,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   optionText: {
-    fontSize: 16,
+    fontSize: getResponsiveFontSize(16, 18, 20),
     fontWeight: "600",
     color: "#1A1A1A",
-    marginBottom: 4,
+    marginBottom: getResponsiveSpacing(4, 6, 8),
   },
   optionTextSelected: {
     color: "#007AFF",
   },
   optionDescription: {
-    fontSize: 14,
+    fontSize: getResponsiveFontSize(14, 16, 18),
     color: "#666",
   },
   optionDescriptionSelected: {
@@ -385,48 +393,37 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   checkmarkContainer: {
-    marginLeft: 16,
+    marginLeft: getResponsiveSpacing(16, 20, 24),
   },
 
-  infoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F0F8FF",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: "#007AFF",
-  },
-  infoText: {
-    fontSize: 14,
-    color: "#007AFF",
-    marginLeft: 8,
+  otherInputContainer: {
     flex: 1,
   },
-
   otherTextInput: {
     backgroundColor: "transparent",
     borderWidth: 0,
     paddingHorizontal: 0,
     paddingVertical: 0,
-    fontSize: 16,
+    fontSize: getResponsiveFontSize(16, 18, 20),
     fontWeight: "600",
     color: "#007AFF",
     flex: 1,
   },
+  characterCount: {
+    fontSize: getResponsiveFontSize(12, 14, 16),
+    color: "#999",
+    textAlign: "right",
+    marginTop: getResponsiveSpacing(4, 6, 8),
+  },
   actionButtonsContainer: {
     flexDirection: "row",
-    paddingHorizontal: 20,
-    paddingTop: 32,
-    paddingBottom: 18,
-    gap: 12,
-    minHeight: 60,
-    marginTop: 5,
-    marginBottom: isWeb ? 80 : 20,
-    ...(isWeb && {
-      marginHorizontal: 8, // Agregar margen horizontal en web móvil
-    }),
+    paddingHorizontal: 0,
+    paddingTop: getResponsiveSpacing(10, 15, 20),
+    paddingBottom: getResponsiveSpacing(8, 10, 12),
+    gap: getResponsiveSpacing(8, 12, 16),
+    minHeight: getResponsiveSpacing(60, 70, 80),
+    marginBottom: getResponsiveSpacing(20, 25, 30),
+    marginHorizontal: getResponsiveSpacing(8, 10, 12)
   },
   saveButton: {
     flex: 1,
@@ -434,8 +431,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "transparent",
-    paddingVertical: 18,
-    borderRadius: 12,
+    paddingVertical: getResponsiveSpacing(18, 22, 26),
+    borderRadius: getResponsiveSpacing(12, 16, 20),
     borderWidth: 2,
     borderColor: "#007AFF",
     shadowColor: "#000",
@@ -453,9 +450,9 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     color: "#007AFF",
-    fontSize: 16,
+    fontSize: getResponsiveFontSize(16, 18, 20),
     fontWeight: "600",
-    marginLeft: 8,
+    marginLeft: getResponsiveSpacing(8, 10, 12),
   },
   saveButtonTextDisabled: {
     color: "#999",
@@ -466,8 +463,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "transparent",
-    paddingVertical: 18,
-    borderRadius: 12,
+    paddingVertical: getResponsiveSpacing(18, 22, 26),
+    borderRadius: getResponsiveSpacing(12, 16, 20),
     borderWidth: 2,
     borderColor: "#666",
     shadowColor: "#000",
@@ -482,10 +479,11 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     color: "#666",
-    fontSize: 16,
+    fontSize: getResponsiveFontSize(16, 18, 20),
     fontWeight: "600",
-    marginLeft: 8,
-  },
+    marginLeft: getResponsiveSpacing(8, 10, 12),
+  }
+
 });
 
 export default EditSelectionScreen;

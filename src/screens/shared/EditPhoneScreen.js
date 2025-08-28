@@ -9,7 +9,16 @@ import {
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { isWeb, webStyles } from "../../utils/responsive";
+import { 
+  isWeb, 
+  webStyles, 
+  isTabletScreen, 
+  isDesktopScreen, 
+  getResponsiveSpacing, 
+  getResponsiveFontSize, 
+  getResponsivePadding,
+  getResponsiveImageSize 
+} from "../../utils/responsive";
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -223,62 +232,63 @@ const EditPhoneScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
-    ...(isWeb && webStyles.container),
+    backgroundColor: '#F8F9FA',
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
+    paddingHorizontal: getResponsivePadding(20, 30, 40),
+    paddingTop: getResponsiveSpacing(20, 25, 30),
+    paddingBottom: getResponsiveSpacing(16, 20, 24),
   },
   backButton: {
-    padding: 8,
+    padding: getResponsiveSpacing(8, 10, 12),
   },
   title: {
-    fontSize: 20,
+    fontSize: getResponsiveFontSize(20, 24, 28),
     fontWeight: "bold",
     color: "#1A1A1A",
   },
   placeholder: {
-    width: 40,
+    width: getResponsiveSpacing(40, 50, 60),
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingHorizontal: getResponsivePadding(20, 30, 40),
+    paddingTop: getResponsiveSpacing(20, 25, 30),
+    width: '100%',
     ...(isWeb && {
-      maxWidth: 600,
+      maxWidth: isDesktopScreen() ? 800 : isTabletScreen() ? 700 : 600,
       margin: '0 auto',
+      alignSelf: 'center',
     }),
   },
   descriptionContainer: {
-    marginBottom: 24,
+    marginBottom: getResponsiveSpacing(24, 30, 36),
   },
   descriptionText: {
-    fontSize: 16,
+    fontSize: getResponsiveFontSize(16, 18, 20),
     color: "#666",
     textAlign: "center",
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: getResponsiveSpacing(20, 25, 30),
   },
   inputLabel: {
-    fontSize: 18,
+    fontSize: getResponsiveFontSize(18, 20, 22),
     fontWeight: "600",
     color: "#1A1A1A",
-    marginBottom: 12,
+    marginBottom: getResponsiveSpacing(12, 15, 18),
   },
   textInput: {
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#E0E0E0",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    fontSize: 16,
+    borderRadius: getResponsiveSpacing(12, 16, 20),
+    paddingHorizontal: getResponsivePadding(16, 20, 24),
+    paddingVertical: getResponsiveSpacing(16, 20, 24),
+    fontSize: getResponsiveFontSize(16, 18, 20),
     color: "#1A1A1A",
     shadowColor: "#000",
     shadowOffset: {
@@ -292,17 +302,17 @@ const styles = StyleSheet.create({
   },
   phoneRow: {
     flexDirection: "row",
-    gap: 12,
+    gap: getResponsiveSpacing(12, 16, 20),
   },
   areaCodeInput: {
     flex: 0.3,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#E0E0E0",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    fontSize: 16,
+    borderRadius: getResponsiveSpacing(12, 16, 20),
+    paddingHorizontal: getResponsivePadding(16, 20, 24),
+    paddingVertical: getResponsiveSpacing(16, 20, 24),
+    fontSize: getResponsiveFontSize(16, 18, 20),
     color: "#1A1A1A",
     shadowColor: "#000",
     shadowOffset: {
@@ -314,8 +324,8 @@ const styles = StyleSheet.create({
     elevation: 3,
     ...(isWeb && {
       ...webStyles.input,
-      flex: 0.25, // Reducir el tamaño en web móvil
-      minWidth: 80, // Ancho mínimo para evitar que se corte
+      flex: 0.25,
+      minWidth: 80,
     }),
   },
   phoneNumberInput: {
@@ -323,10 +333,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#E0E0E0",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    fontSize: 16,
+    borderRadius: getResponsiveSpacing(12, 16, 20),
+    paddingHorizontal: getResponsivePadding(16, 20, 24),
+    paddingVertical: getResponsiveSpacing(16, 20, 24),
+    fontSize: getResponsiveFontSize(16, 18, 20),
     color: "#1A1A1A",
     shadowColor: "#000",
     shadowOffset: {
@@ -338,7 +348,7 @@ const styles = StyleSheet.create({
     elevation: 3,
     ...(isWeb && {
       ...webStyles.input,
-      flex: 0.75, // Aumentar proporcionalmente en web móvil
+      flex: 0.75,
     }),
   },
   textInputError: {
@@ -346,25 +356,25 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: "#FF3B30",
-    fontSize: 14,
-    marginTop: 8,
+    fontSize: getResponsiveFontSize(14, 16, 18),
+    marginTop: getResponsiveSpacing(8, 10, 12),
     marginLeft: 4,
   },
   infoContainer: {
     flexDirection: "row",
     alignItems: "flex-start",
     backgroundColor: "#F0F8FF",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingHorizontal: getResponsivePadding(16, 20, 24),
+    paddingVertical: getResponsiveSpacing(12, 15, 18),
+    borderRadius: getResponsiveSpacing(8, 10, 12),
     borderLeftWidth: 4,
     borderLeftColor: "#007AFF",
-    marginBottom: 32,
+    marginBottom: getResponsiveSpacing(32, 40, 48),
   },
   infoText: {
-    fontSize: 14,
+    fontSize: getResponsiveFontSize(14, 16, 18),
     color: "#007AFF",
-    marginLeft: 8,
+    marginLeft: getResponsiveSpacing(8, 10, 12),
     flex: 1,
     lineHeight: 20,
   },
@@ -372,12 +382,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: 0,
     paddingTop: 0,
-    paddingBottom: 18,
-    gap: 12,
-    minHeight: 60,
-    marginBottom: isWeb ? 80 : 20,
+    paddingBottom: getResponsiveSpacing(18, 22, 26),
+    gap: getResponsiveSpacing(12, 16, 20),
+    minHeight: getResponsiveSpacing(60, 70, 80),
+    marginBottom: isWeb ? getResponsiveSpacing(80, 100, 120) : getResponsiveSpacing(20, 25, 30),
     ...(isWeb && {
-      marginHorizontal: 8, // Agregar margen horizontal en web móvil
+      marginHorizontal: getResponsiveSpacing(8, 10, 12),
     }),
   },
   saveButton: {
@@ -386,8 +396,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "transparent",
-    paddingVertical: 18,
-    borderRadius: 12,
+    paddingVertical: getResponsiveSpacing(18, 22, 26),
+    borderRadius: getResponsiveSpacing(12, 16, 20),
     borderWidth: 2,
     borderColor: "#007AFF",
     shadowColor: "#000",
@@ -405,9 +415,9 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     color: "#007AFF",
-    fontSize: 16,
+    fontSize: getResponsiveFontSize(16, 18, 20),
     fontWeight: "600",
-    marginLeft: 8,
+    marginLeft: getResponsiveSpacing(8, 10, 12),
   },
   saveButtonTextDisabled: {
     color: "#999",
@@ -418,8 +428,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "transparent",
-    paddingVertical: 18,
-    borderRadius: 12,
+    paddingVertical: getResponsiveSpacing(18, 22, 26),
+    borderRadius: getResponsiveSpacing(12, 16, 20),
     borderWidth: 2,
     borderColor: "#666",
     shadowColor: "#000",
@@ -434,9 +444,9 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     color: "#666",
-    fontSize: 16,
+    fontSize: getResponsiveFontSize(16, 18, 20),
     fontWeight: "600",
-    marginLeft: 8,
+    marginLeft: getResponsiveSpacing(8, 10, 12),
   },
 });
 
