@@ -130,7 +130,6 @@ const PatientProfile = ({ navigation, route }) => {
             <Image source={{ uri: user.image }} style={styles.userImage} />
             <View style={styles.userDetails}>
               <Text style={styles.userName}>{user.name}</Text>
-              <Text style={styles.userEmail}>{user.email}</Text>
               <Text style={styles.membershipText}>Miembro desde {user.membershipDate}</Text>
 
             </View>

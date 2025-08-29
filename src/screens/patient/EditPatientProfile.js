@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -26,7 +26,7 @@ import { formatDateForDisplay } from "../../utils/dateUtils";
 
 const { width: screenWidth } = Dimensions.get('window');
 
-const EditPatientProfile = ({ navigation, route }) => {
+const EditPatientProfile = ({ navigation }) => {
   // Obtener los datos del usuario desde el contexto
   const { patientProfile, updateProfileField } = usePatientProfile();
   
@@ -421,10 +421,9 @@ const EditPatientProfile = ({ navigation, route }) => {
   // Función para renderizar la página de Datos de Perfil
   const renderProfilePage = () => (
     <View style={styles.pageContainer}>
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
+      <View 
         contentContainerStyle={styles.pageContentContainer}
-        nestedScrollEnabled={true}
+ 
       >
         {/* User Image Section - Ahora hace scroll */}
         <View style={styles.imageSection}>
@@ -446,17 +445,15 @@ const EditPatientProfile = ({ navigation, route }) => {
           {renderMenuItem('phone', 'Teléfono', 'call-outline')}
           {renderMenuItem('city', 'Ciudad', 'location-outline')}
         </View>
-      </ScrollView>
+      </View>
     </View>
   );
 
   // Función para renderizar la página de Datos Médicos
   const renderMedicalPage = () => (
     <View style={styles.pageContainer}>
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
+      <View 
         contentContainerStyle={styles.pageContentContainer}
-        nestedScrollEnabled={true}
       >
         {/* Sección: Datos Médicos */}
         <View style={styles.menuSection}>
@@ -468,7 +465,7 @@ const EditPatientProfile = ({ navigation, route }) => {
           {renderMenuItem('allergies', 'Alergias', 'warning-outline')}
           {renderMenuItem('disability', 'Discapacidad', 'accessibility-outline')}
         </View>
-      </ScrollView>
+      </View>
     </View>
   );
 
@@ -519,7 +516,7 @@ const EditPatientProfile = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView 
+      <View 
         style={styles.mainScrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.mainScrollContent}
@@ -540,7 +537,7 @@ const EditPatientProfile = ({ navigation, route }) => {
         {renderPageIndicators()}
 
         {/* Carrusel horizontal - SOLO para las secciones de datos */}
-        <View style={styles.carouselContainer}>
+        <ScrollView style={styles.carouselContainer} showsVerticalScrollIndicator={false}>
           <FlatList
             ref={flatListRef}
             data={carouselData}
@@ -559,8 +556,8 @@ const EditPatientProfile = ({ navigation, route }) => {
             style={styles.carousel}
             scrollEnabled={true}
           />
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };
@@ -640,8 +637,6 @@ const styles = StyleSheet.create({
   },
   carouselContainer: {
     height: 'auto',
-    minHeight: isTabletScreen() ? 600 : isDesktopScreen() ? 700 : 500,
-    maxHeight: isTabletScreen() ? 800 : isDesktopScreen() ? 1000 : 700,
     position: 'relative',
     width: '100%',
     ...(isWeb && {
@@ -676,15 +671,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   menuSection: {
-    marginBottom: getResponsiveSpacing(20, 25, 30),
+    marginBottom: getResponsiveSpacing(10, 15, 20),
     paddingBottom: getResponsiveSpacing(10, 15, 20),
-  },
-  menuSectionTitle: {
-    fontSize: getResponsiveFontSize(18, 20, 22),
-    fontWeight: "700",
-    color: "#1A1A1A",
-    marginBottom: getResponsiveSpacing(16, 20, 24),
-    paddingHorizontal: 4,
   },
   menuItem: {
     flexDirection: "row",
@@ -735,14 +723,7 @@ const styles = StyleSheet.create({
   menuItemRight: {
     marginLeft: getResponsiveSpacing(16, 20, 24),
   },
-  pageTitle: {
-    fontSize: getResponsiveFontSize(24, 28, 32),
-    fontWeight: "bold",
-    color: "#1A1A1A",
-    textAlign: "center",
-    marginBottom: getResponsiveSpacing(20, 25, 30),
-    marginTop: getResponsiveSpacing(10, 15, 20),
-  },
+
   pageIndicators: {
     flexDirection: 'row',
     justifyContent: 'center',

@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
-  Dimensions,
   TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -64,8 +63,6 @@ import {
  *   onSave: (field, value) => console.log(field, value)
  * });
  */
-
-const { width: screenWidth } = Dimensions.get('window');
 
 const EditMultiSelectionScreen = ({ navigation, route }) => {
   const { 
@@ -446,6 +443,7 @@ const styles = StyleSheet.create({
     padding: getResponsiveSpacing(8, 10, 12),
   },
   title: {
+    maxWidth: '80%',
     fontSize: getResponsiveFontSize(20, 24, 28),
     fontWeight: "bold",
     color: "#1A1A1A",
@@ -458,8 +456,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: getResponsivePadding(20, 30, 40),
     paddingTop: getResponsiveSpacing(20, 25, 30),
     width: '100%',
+    maxWidth: isDesktopScreen() ? 800 : isTabletScreen() ? 700 : 600,
     ...(isWeb && {
-      maxWidth: isDesktopScreen() ? 1200 : isTabletScreen() ? 1000 : 800,
       margin: '0 auto',
       alignSelf: 'center',
     }),
