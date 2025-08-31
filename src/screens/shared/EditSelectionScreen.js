@@ -18,6 +18,7 @@ import {
   getResponsiveFontSize, 
   getResponsivePadding
 } from "../../utils/responsive";
+import { usePatientProfile } from "../../context/PatientProfileContext";
 
 const EditSelectionScreen = ({ navigation, route }) => {
   const { 
@@ -26,9 +27,10 @@ const EditSelectionScreen = ({ navigation, route }) => {
     currentValue, 
     options, 
     validationRules,
-    onSave,
     allowOther = false 
   } = route.params;
+  
+  const { updateProfileField } = usePatientProfile();
 
   // Detectar si el valor actual es personalizado (no está en las opciones predefinidas)
   const isCustomValue = (value) => {
@@ -117,10 +119,8 @@ const EditSelectionScreen = ({ navigation, route }) => {
       finalValue = otherValue.trim();
     }
 
-    // Llamar a la función de guardado
-    if (onSave) {
-      onSave(field, finalValue);
-    }
+    // Actualizar el contexto directamente
+    updateProfileField(field, finalValue);
 
     // Navegar de vuelta
     navigation.goBack();

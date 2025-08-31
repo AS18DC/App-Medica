@@ -17,6 +17,7 @@ import {
   getResponsiveFontSize, 
   getResponsivePadding
 } from "../../utils/responsive";
+import { usePatientProfile } from "../../context/PatientProfileContext";
 
 const EditFieldScreen = ({ navigation, route }) => {
   const { 
@@ -27,9 +28,10 @@ const EditFieldScreen = ({ navigation, route }) => {
     keyboardType = "default", 
     maxLength = null,
     minLength = null,
-    validationRules,
-    onSave 
+    validationRules
   } = route.params;
+  
+  const { updateProfileField } = usePatientProfile();
 
   const [value, setValue] = useState(currentValue || "");
   const [error, setError] = useState("");
@@ -81,10 +83,8 @@ const EditFieldScreen = ({ navigation, route }) => {
       return;
     }
 
-    // Llamar a la función de guardado
-    if (onSave) {
-      onSave(field, value);
-    }
+    // Actualizar el contexto directamente
+    updateProfileField(field, value);
 
     // Navegar de vuelta
     navigation.goBack();

@@ -17,15 +17,17 @@ import {
   getResponsiveFontSize, 
   getResponsivePadding
 } from "../../utils/responsive";
+import { usePatientProfile } from "../../context/PatientProfileContext";
 
 const EditPhoneScreen = ({ navigation, route }) => {
   const { 
     field, 
     label, 
     currentValue, 
-    validationRules,
-    onSave 
+    validationRules
   } = route.params;
+  
+  const { updateProfileField } = usePatientProfile();
 
   // Separar el teléfono actual en código de área y número
   const parsePhoneNumber = (phoneString) => {
@@ -102,10 +104,8 @@ const EditPhoneScreen = ({ navigation, route }) => {
     // Combinar el código de área y número de teléfono
     const fullPhone = `${phoneData.areaCode} ${phoneData.phoneNumber}`;
 
-    // Llamar a la función de guardado
-    if (onSave) {
-      onSave(field, fullPhone);
-    }
+    // Actualizar el contexto directamente
+    updateProfileField(field, fullPhone);
 
     // Navegar de vuelta
     navigation.goBack();

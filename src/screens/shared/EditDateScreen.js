@@ -24,6 +24,7 @@ import {
   isValidDateComponents, 
   formatDateToSpanish 
 } from "../../utils/dateUtils";
+import { usePatientProfile } from "../../context/PatientProfileContext";
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -31,9 +32,10 @@ const EditDateScreen = ({ navigation, route }) => {
   const { 
     field, 
     label, 
-    currentValue, 
-    onSave 
+    currentValue
   } = route.params;
+  
+  const { updateProfileField } = usePatientProfile();
 
   // Inicializar estado con fecha por defecto o valor actual
   const initializeDate = () => {
@@ -125,9 +127,8 @@ const EditDateScreen = ({ navigation, route }) => {
     const selectedDate = new Date(dateValues.year, dateValues.month - 1, dateValues.day);
     
     // Llamar a la función de guardado con string ISO
-    if (onSave) {
-      onSave(field, selectedDate.toISOString());
-    }
+    // Actualizar el contexto directamente
+    updateProfileField(field, selectedDate.toISOString());
 
     // Navegar de vuelta
     navigation.goBack();

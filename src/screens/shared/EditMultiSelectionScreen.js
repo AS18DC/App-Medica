@@ -19,6 +19,7 @@ import {
   getResponsivePadding,
   getResponsiveImageSize 
 } from "../../utils/responsive";
+import { usePatientProfile } from "../../context/PatientProfileContext";
 
 /**
  * EditMultiSelectionScreen - Pantalla para selección múltiple de opciones
@@ -71,11 +72,12 @@ const EditMultiSelectionScreen = ({ navigation, route }) => {
     currentValue, 
     options, 
     validationRules,
-    onSave,
     allowOther = false,
     maxSelections = null, // Número máximo de selecciones permitidas
     uniqueOptions = [] // Array de opciones que son únicas/exclusivas
   } = route.params;
+  
+  const { updateProfileField } = usePatientProfile();
 
   // Convertir currentValue a array si no lo es
   const initialValues = Array.isArray(currentValue) ? currentValue : (currentValue ? [currentValue] : []);
@@ -211,10 +213,8 @@ const EditMultiSelectionScreen = ({ navigation, route }) => {
     // Combinar valores seleccionados y personalizados
     const finalValues = [...selectedValues, ...otherValues];
 
-    // Llamar a la función de guardado
-    if (onSave) {
-      onSave(field, finalValues);
-    }
+    // Actualizar el contexto directamente
+    updateProfileField(field, finalValues);
 
     // Navegar de vuelta
     navigation.goBack();

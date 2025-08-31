@@ -73,6 +73,16 @@ const EditPatientProfile = ({ navigation }) => {
     });
   }, [patientProfile]);
 
+  // Escuchar cuando regresamos de una pantalla de edición
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      // Verificar si hay datos pendientes de guardar desde las pantallas de edición
+      // Esto se manejará a través del contexto
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
   // Función para manejar la edición de un campo
   const handleEditField = (field) => {
     // Navegar a la pantalla de edición correspondiente
@@ -83,16 +93,14 @@ const EditPatientProfile = ({ navigation }) => {
         field,
         label: fieldConfig.label,
         currentValue: editingUser[field],
-        validationRules: fieldConfig.validationRules,
-        onSave: handleFieldSave
+        validationRules: fieldConfig.validationRules
       });
     } else if (fieldConfig.type === 'date') {
       navigation.navigate('EditDateScreen', {
         field,
         label: fieldConfig.label,
         currentValue: editingUser[field],
-        validationRules: fieldConfig.validationRules,
-        onSave: handleFieldSave
+        validationRules: fieldConfig.validationRules
       });
     } else if (fieldConfig.type === 'selection') {
       navigation.navigate('EditSelectionScreen', {
@@ -101,8 +109,7 @@ const EditPatientProfile = ({ navigation }) => {
         currentValue: editingUser[field],
         options: fieldConfig.options,
         validationRules: fieldConfig.validationRules,
-        allowOther: fieldConfig.allowOther || false,
-        onSave: handleFieldSave
+        allowOther: fieldConfig.allowOther || false
       });
     } else if (fieldConfig.type === 'multiSelection') {
       navigation.navigate('EditMultiSelectionScreen', {
@@ -113,8 +120,7 @@ const EditPatientProfile = ({ navigation }) => {
         validationRules: fieldConfig.validationRules,
         allowOther: fieldConfig.allowOther || false,
         maxSelections: fieldConfig.maxSelections || null,
-        uniqueOptions: fieldConfig.uniqueOptions || [],
-        onSave: handleFieldSave
+        uniqueOptions: fieldConfig.uniqueOptions || []
       });
     } else {
       navigation.navigate('EditFieldScreen', {
@@ -125,8 +131,7 @@ const EditPatientProfile = ({ navigation }) => {
         keyboardType: fieldConfig.keyboardType,
         maxLength: fieldConfig.maxLength,
         minLength: fieldConfig.minLength,
-        validationRules: fieldConfig.validationRules,
-        onSave: handleFieldSave
+        validationRules: fieldConfig.validationRules
       });
     }
   };
