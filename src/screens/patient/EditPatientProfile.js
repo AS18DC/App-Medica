@@ -21,14 +21,14 @@ import {
   getResponsivePadding,
   getResponsiveImageSize 
 } from "../../utils/responsive";
-import { usePatientProfile } from "../../context/PatientProfileContext";
+import { usePatientProfile} from "../../context/PatientProfileContext";
 import { formatDateForDisplay } from "../../utils/dateUtils";
 
 const { width: screenWidth } = Dimensions.get('window');
 
 const EditPatientProfile = ({ navigation }) => {
   // Obtener los datos del usuario desde el contexto
-  const { patientProfile, updateProfileField } = usePatientProfile();
+  const { patientProfile, updateProfileField, updateVerifiedField } = usePatientProfile();
   
   // Referencia para el FlatList
   const flatListRef = useRef(null);
@@ -65,6 +65,9 @@ const EditPatientProfile = ({ navigation }) => {
     ...parsePhoneNumber(patientProfile.phone)
   });
 
+  // Estado para campos verificados 
+  const [verifiedFields, setVerifiedFields] = useState(patientProfile.verifiedFields);
+
   // Sincronizar el estado local cuando cambie el contexto
   useEffect(() => {
     setEditingUser({
@@ -77,14 +80,16 @@ const EditPatientProfile = ({ navigation }) => {
   const handleEditField = (field) => {
     // Navegar a la pantalla de edición correspondiente
     const fieldConfig = getFieldConfig(field);
+    const saveFunction = verifiedFields.hasOwnProperty(field) ? handleFieldSaveWithVerification : handleFieldSave;
+    const verificationFunction = verifiedFields.hasOwnProperty(field) ? handleFieldVerification : undefined;
     
     if (fieldConfig.type === 'phone') {
       navigation.navigate('EditPhoneScreen', {
         field,
         label: fieldConfig.label,
         currentValue: editingUser[field],
-        validationRules: fieldConfig.validationRules,
-        onSave: handleFieldSave
+        onSave: saveFunction,
+        onVerification: verificationFunction
       });
     } else if (fieldConfig.type === 'date') {
       navigation.navigate('EditDateScreen', {
@@ -92,7 +97,16 @@ const EditPatientProfile = ({ navigation }) => {
         label: fieldConfig.label,
         currentValue: editingUser[field],
         validationRules: fieldConfig.validationRules,
-        onSave: handleFieldSave
+        onSave: saveFunction,
+        onVerification: verificationFunction
+      });
+    } else if (fieldConfig.type === 'email') {
+      navigation.navigate('EditEmailScreen', {
+        field,
+        label: fieldConfig.label,
+        currentValue: editingUser[field],
+        onSave: saveFunction,
+        onVerification: verificationFunction
       });
     } else if (fieldConfig.type === 'selection') {
       navigation.navigate('EditSelectionScreen', {
@@ -102,7 +116,8 @@ const EditPatientProfile = ({ navigation }) => {
         options: fieldConfig.options,
         validationRules: fieldConfig.validationRules,
         allowOther: fieldConfig.allowOther || false,
-        onSave: handleFieldSave
+        onSave: saveFunction,
+        onVerification: verificationFunction
       });
     } else if (fieldConfig.type === 'multiSelection') {
       navigation.navigate('EditMultiSelectionScreen', {
@@ -114,7 +129,8 @@ const EditPatientProfile = ({ navigation }) => {
         allowOther: fieldConfig.allowOther || false,
         maxSelections: fieldConfig.maxSelections || null,
         uniqueOptions: fieldConfig.uniqueOptions || [],
-        onSave: handleFieldSave
+        onSave: saveFunction,
+        onVerification: verificationFunction
       });
     } else {
       navigation.navigate('EditFieldScreen', {
@@ -126,7 +142,8 @@ const EditPatientProfile = ({ navigation }) => {
         maxLength: fieldConfig.maxLength,
         minLength: fieldConfig.minLength,
         validationRules: fieldConfig.validationRules,
-        onSave: handleFieldSave
+        onSave: saveFunction,
+        onVerification: verificationFunction
       });
     }
   };
@@ -143,47 +160,42 @@ const EditPatientProfile = ({ navigation }) => {
     updateProfileField(field, value);
   };
 
-  // Configuración de campos
+  // Función para guardar cambios de un campo individual que requiere verificación
+  const handleFieldSaveWithVerification = (field, value) => {
+    // Actualizar el estado local
+    handleFieldSave(field, value);
+
+    // Desmarcar el campo como verificado
+    setVerifiedFields(prev => ({
+      ...prev,
+      [field]: false
+    }));
+
+    // Actualizar el contexto global
+    updateVerifiedField(field, false);
+  };
+
+  const handleFieldVerification = (field, isVerified) => {
+    // Actualizar el estado de verificación
+    setVerifiedFields(prev => ({
+      ...prev,
+      [field]: isVerified
+    }));
+
+    // Actualizar el contexto global
+    updateVerifiedField(field, isVerified);
+  };
+
+  // Configuración de campos editables
   const getFieldConfig = (field) => {
     const configs = {
-      name: {
-        type: 'input',
-        label: 'Nombre completo',
-        placeholder: 'Ingresa tu nombre completo',
-        keyboardType: 'default',
-        maxLength: 50,
-        minLength: 2,
-        validationRules: {
-          required: true,
-          minLength: 2,
-          maxLength: 50,
-          pattern: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
-          errorMessage: 'El nombre solo puede contener letras y espacios',
-          info: 'Ingresa tus nombres y apellidos. Solo se permiten letras y espacios.'
-        }
-      },
       email: {
-        type: 'input',
-        label: 'Email',
-        placeholder: 'Ingresa tu email',
-        keyboardType: 'email-address',
-        maxLength: 100,
-        minLength: 5,
-        validationRules: {
-          required: true,
-          minLength: 5,
-          maxLength: 100,
-          pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-          errorMessage: 'Ingresa un email válido',
-          info: 'El email debe tener un formato válido (ejemplo@dominio.com). Este será usado para comunicaciones importantes.'
-        }
+        type: 'email',
+        label: 'Correo',
       },
       phone: {
         type: 'phone',
         label: 'Teléfono',
-        validationRules: {
-          required: true
-        }
       },
       city: {
         type: 'selection',
@@ -197,30 +209,6 @@ const EditPatientProfile = ({ navigation }) => {
           info: 'Selecciona la ciudad donde resides actualmente. Esta información es importante para coordinar citas y servicios médicos.'
         },
         allowOther: true
-      },
-      cardId: {
-        type: 'input',
-        label: 'Cédula de identidad',
-        placeholder: 'Ej: V-12345678',
-        keyboardType: 'default',
-        maxLength: 12,
-        minLength: 7,
-        validationRules: {
-          required: true,
-          minLength: 7,
-          maxLength: 12,
-          pattern: /^[Vv]-\d{7,10}$/,
-          errorMessage: 'La cédula debe tener formato V-12345678',
-          info: 'Ingresa tu número de cédula de identidad venezolana con el formato V-12345678'
-        }
-      },
-      birthDate: {
-        type: 'date',
-        label: 'Fecha de nacimiento',
-        validationRules: {
-          required: true,
-          info: 'Selecciona tu fecha de nacimiento. Esta información es necesaria para calcular tu edad y proporcionar atención médica apropiada.'
-        }
       },
       gender: {
         type: 'selection',
@@ -339,82 +327,121 @@ const EditPatientProfile = ({ navigation }) => {
   };
 
   // Función para renderizar un item del menú de solo lectura
-  const renderReadOnlyMenuItem = (field, label, icon) => (
-    <View style={[styles.menuItem, styles.menuItemReadOnly]}>
-      <View style={styles.menuItemLeft}>
-        <View style={styles.menuItemIcon}>
-          <Ionicons name={icon} size={20} color="#999" />
-        </View>
-        <View style={styles.menuItemContent}>
-          <Text style={styles.menuItemLabel}>{label}</Text>
-          <Text style={styles.menuItemValue}>
-            {field === 'phone' 
-              ? `${editingUser.areaCode} ${editingUser.phoneNumber}` 
-              : field === 'birthDate' && editingUser[field]
-              ? formatDateForDisplay(editingUser[field], 'long')
-              : field === 'allergies' || field === 'disability'
-              ? Array.isArray(editingUser[field]) && editingUser[field].length > 0
-                ? editingUser[field].length === 1 
-                  ? editingUser[field][0]
-                  : editingUser[field].length <= 3
-                  ? editingUser[field].join(', ')
-                  : `${editingUser[field].length} seleccionadas`
-                : "No especificado"
-              : editingUser[field] 
-              ? String(editingUser[field])
-              : "No especificado"
-            }
-          </Text>
+  const renderReadOnlyMenuItem = (field, label, icon) => {
+    // Campos que muestran indicador de verificación
+    const showVerificationIcon = verifiedFields.hasOwnProperty(field);
+
+    return (
+      <View style={styles.menuItemContainer}>
+        {showVerificationIcon && renderVerificationIcon(field)}
+        <View style={[styles.menuItem, styles.menuItemReadOnly]}>
+          <View style={[styles.menuItemLeft, showVerificationIcon && styles.menuItemLeftVerify]}>
+            <View style={styles.menuItemIcon}>
+              <Ionicons name={icon} size={20} color="#999" />
+            </View>
+            <View style={styles.menuItemContent}>
+              <Text style={styles.menuItemLabel}>{label}</Text>
+              <Text style={styles.menuItemValue}>
+                {getFieldDisplayValue(field, editingUser[field])}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.menuItemRight}>
+            <Text style={styles.readOnlyText}>Solo lectura</Text>
+          </View>
         </View>
       </View>
-      <View style={styles.menuItemRight}>
-        <Text style={styles.readOnlyText}>Solo lectura</Text>
+    );
+  };
+
+  // Función para obtener el valor de visualización de un campo
+  const getFieldDisplayValue = (field, value) => {
+    // Campo de teléfono
+    if (field === 'phone') {
+      return `${editingUser.areaCode} ${editingUser.phoneNumber}`;
+    }
+    
+    // Campo de fecha de nacimiento
+    if (field === 'birthDate' && value) {
+      return formatDateForDisplay(value, 'long');
+    }
+    
+    // Campos de selección múltiple (alergias, discapacidad)
+    if (field === 'allergies' || field === 'disability') {
+      return getMultiSelectionDisplayValue(value);
+    }
+    
+    // Campos de texto normales
+    if (value) {
+      return String(value);
+    }
+    
+    // Valor por defecto
+    return "No especificado";
+  };
+
+  // Función para obtener el valor de visualización de selecciones múltiples
+  const getMultiSelectionDisplayValue = (selections) => {
+    if (!Array.isArray(selections) || selections.length === 0) {
+      return "No especificado";
+    }
+    
+    if (selections.length === 1) {
+      return selections[0];
+    }
+    
+    if (selections.length <= 3) {
+      return selections.join(', ');
+    }
+    
+    return `${selections.length} seleccionadas`;
+  };
+
+  // Función para renderizar el indicador de verificación
+  const renderVerificationIcon = (field) => {
+    const isVerified = verifiedFields[field];
+    
+    return (
+      <View style={[
+        styles.verificationIcon      
+        ]}>
+        <Ionicons 
+          name={isVerified ? "shield-checkmark" : "shield-outline"} 
+          size={getResponsiveFontSize(20, 25, 30)} 
+          color={isVerified ? "#34C759" : "#999"} 
+        />
       </View>
-    </View>
-  );
+    );
+  };
 
   // Función para renderizar un item del menú editable
   const renderMenuItem = (field, label, icon) => {
-    // Campos de solo lectura
-    if (field === 'name' || field === 'birthDate' || field === 'cardId') {
-      return renderReadOnlyMenuItem(field, label, icon);
-    }
+    // Campos que muestran indicador de verificación
+    const showVerificationIcon = verifiedFields.hasOwnProperty(field);
 
     return (
-      <TouchableOpacity 
-        style={styles.menuItem}
-        onPress={() => handleEditField(field)}
-      >
-        <View style={styles.menuItemLeft}>
-          <View style={styles.menuItemIcon}>
-            <Ionicons name={icon} size={20} color="#666" />
+      <View style={styles.menuItemContainer}>
+        {showVerificationIcon && renderVerificationIcon(field)}
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={() => handleEditField(field)}
+        >
+          <View style={[styles.menuItemLeft, showVerificationIcon && styles.menuItemLeftVerify]}>
+            <View style={styles.menuItemIcon}>
+              <Ionicons name={icon} size={20} color="#666" />
+            </View>
+            <View style={styles.menuItemContent}>
+              <Text style={styles.menuItemLabel}>{label}</Text>
+              <Text style={styles.menuItemValue}>
+                {getFieldDisplayValue(field, editingUser[field])}
+              </Text>
+            </View>
           </View>
-          <View style={styles.menuItemContent}>
-            <Text style={styles.menuItemLabel}>{label}</Text>
-            <Text style={styles.menuItemValue}>
-              {field === 'phone' 
-                ? `${editingUser.areaCode} ${editingUser.phoneNumber}` 
-                : field === 'birthDate' && editingUser[field]
-                ? formatDateForDisplay(editingUser[field], 'long')
-                : field === 'allergies' || field === 'disability'
-                ? Array.isArray(editingUser[field]) && editingUser[field].length > 0
-                  ? editingUser[field].length === 1 
-                    ? editingUser[field][0]
-                    : editingUser[field].length <= 3
-                    ? editingUser[field].join(', ')
-                    : `${editingUser[field].length} seleccionadas`
-                  : "No especificado"
-                : editingUser[field] 
-                ? String(editingUser[field])
-                : "No especificado"
-              }
-            </Text>
+          <View style={styles.menuItemRight}>
+            <Ionicons name="chevron-forward" size={20} color="#999" />
           </View>
-        </View>
-        <View style={styles.menuItemRight}>
-          <Ionicons name="chevron-forward" size={20} color="#999" />
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </View>
     );
   };
 
@@ -439,8 +466,8 @@ const EditPatientProfile = ({ navigation }) => {
 
         {/* Sección: Datos de Perfil */}
         <View style={styles.menuSection}>
-          {renderMenuItem('name', 'Nombre completo', 'person-outline')}
-          {renderMenuItem('cardId', 'Cédula de identidad', 'card-outline')}
+          {renderReadOnlyMenuItem('name', 'Nombre completo', 'person-outline')}
+          {renderReadOnlyMenuItem('cardId', 'Cédula de identidad', 'card-outline')}
           {renderMenuItem('email', 'Email', 'mail-outline')}
           {renderMenuItem('phone', 'Teléfono', 'call-outline')}
           {renderMenuItem('city', 'Ciudad', 'location-outline')}
@@ -457,7 +484,7 @@ const EditPatientProfile = ({ navigation }) => {
       >
         {/* Sección: Datos Médicos */}
         <View style={styles.menuSection}>
-          {renderMenuItem('birthDate', 'Fecha de nacimiento', 'calendar-outline')}
+          {renderReadOnlyMenuItem('birthDate', 'Fecha de nacimiento', 'calendar-outline')}
           {renderMenuItem('gender', 'Sexo', 'person-outline')}
           {renderMenuItem('height', 'Altura (cm)', 'resize-outline')}
           {renderMenuItem('weight', 'Peso (kg)', 'scale-outline')}
@@ -674,6 +701,10 @@ const styles = StyleSheet.create({
     marginBottom: getResponsiveSpacing(10, 15, 20),
     paddingBottom: getResponsiveSpacing(10, 15, 20),
   },
+  menuItemContainer: {
+    position: "relative",
+    marginBottom: getResponsiveSpacing(10, 15, 20),
+  },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -682,7 +713,6 @@ const styles = StyleSheet.create({
     borderRadius: getResponsiveSpacing(12, 16, 20),
     paddingHorizontal: getResponsivePadding(16, 20, 24),
     paddingVertical: getResponsiveSpacing(14, 18, 22),
-    marginBottom: getResponsiveSpacing(10, 15, 20),
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -697,6 +727,9 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
+  },
+  menuItemLeftVerify: {
+    marginLeft: getResponsiveSpacing(20, 25, 30),
   },
   menuItemIcon: {
     width: getResponsiveImageSize(40, 50, 60),
@@ -723,7 +756,12 @@ const styles = StyleSheet.create({
   menuItemRight: {
     marginLeft: getResponsiveSpacing(16, 20, 24),
   },
-
+  verificationIcon: {
+    position: "absolute",
+    top: getResponsiveSpacing(12, 15, 18),
+    left: getResponsiveSpacing(8, 10, 12),
+    zIndex: 1,
+  },
   pageIndicators: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -758,7 +796,7 @@ const styles = StyleSheet.create({
     fontSize: getResponsiveFontSize(12, 14, 16),
     color: '#999999',
     fontStyle: 'italic',
-  },
+  }
 });
 
 export default EditPatientProfile;

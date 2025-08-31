@@ -26,7 +26,13 @@ export const PatientProfileProvider = ({ children }) => {
     weight: '',
     bloodType: '',
     allergies: [],
-    disability: []
+    disability: [],
+    verifiedFields: {
+      cardId: true,
+      name: true,
+      email: false,
+      phone: false
+    }
   });
 
   // Función para actualizar un campo específico del perfil
@@ -40,6 +46,16 @@ export const PatientProfileProvider = ({ children }) => {
     setPatientProfile(prev => ({
       ...prev,
       [field]: finalValue
+    }));
+  };
+
+  const updateVerifiedField = (field, value) => {
+    setPatientProfile(prev => ({
+      ...prev,
+      verifiedFields: {
+        ...prev.verifiedFields,
+        [field]: value
+      }
     }));
   };
 
@@ -76,13 +92,20 @@ export const PatientProfileProvider = ({ children }) => {
       weight: '',
       bloodType: '',
       allergies: [],
-      disability: []
+      disability: [],
+      verifiedFields: {
+        cardId: true,
+        name: true,
+        email: false,
+        phone: false
+      }
     });
   };
 
   const value = {
     patientProfile,
     updateProfileField,
+    updateVerifiedField,
     updateProfileFields,
     resetProfile
   };

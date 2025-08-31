@@ -20,11 +20,11 @@ import {
 
 const EditPhoneScreen = ({ navigation, route }) => {
   const { 
-    field, 
-    label, 
+    field,
+    label,
     currentValue, 
-    validationRules,
-    onSave 
+    onSave,
+    onVerification
   } = route.params;
 
   // Separar el teléfono actual en código de área y número
@@ -85,8 +85,8 @@ const EditPhoneScreen = ({ navigation, route }) => {
     }));
   };
 
-  // Guardar cambios
-  const handleSave = () => {
+  // Verificar teléfono
+  const handleVerify = () => {
     // Validar ambos campos
     const areaCodeValidation = validateField("areaCode", phoneData.areaCode);
     const phoneNumberValidation = validateField("phoneNumber", phoneData.phoneNumber);
@@ -102,13 +102,27 @@ const EditPhoneScreen = ({ navigation, route }) => {
     // Combinar el código de área y número de teléfono
     const fullPhone = `${phoneData.areaCode} ${phoneData.phoneNumber}`;
 
-    // Llamar a la función de guardado
+    //Guardar el teléfono
     if (onSave) {
       onSave(field, fullPhone);
     }
 
-    // Navegar de vuelta
-    navigation.goBack();
+    // Navegar a la pantalla de verificación
+    navigation.navigate('VerificationCodeScreen', {
+      field,
+      label: label || 'Teléfono',
+      fieldType: 'phone',
+      value: fullPhone,
+      onVerificationSuccess: (field, isVerified) => {
+        if (isVerified) {
+          // Marcar el campo como verificado
+          if(onVerification) {
+            onVerification(field, true);
+          }
+          navigation.goBack();
+        }
+      }
+    });
   };
 
   // Cancelar edición
@@ -116,8 +130,8 @@ const EditPhoneScreen = ({ navigation, route }) => {
     navigation.goBack();
   };
 
-  // Verificar si se puede guardar
-  const canSave = () => {
+  // Verificar si se puede verificar
+  const canVerify = () => {
     return phoneData.areaCode.trim() !== "" && 
            phoneData.phoneNumber.trim() !== "" && 
            !errors.areaCode && 
@@ -149,7 +163,7 @@ const EditPhoneScreen = ({ navigation, route }) => {
 
         {/* Campo de teléfono en una sola fila */}
         <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Teléfono *</Text>
+          <Text style={styles.inputLabel}>{label} *</Text>
           <View style={styles.phoneRow}>
             <TextInput
               style={[
@@ -195,23 +209,23 @@ const EditPhoneScreen = ({ navigation, route }) => {
           <TouchableOpacity
             style={[
               styles.saveButton,
-              !canSave() ? styles.saveButtonDisabled : null,
+              !canVerify() ? styles.saveButtonDisabled : null,
             ]}
-            onPress={handleSave}
-            disabled={!canSave()}
+            onPress={handleVerify}
+            disabled={!canVerify()}
           >
             <Ionicons
-              name="checkmark"
+              name="shield-checkmark-outline"
               size={20}
-              color={canSave() ? "#007AFF" : "#999"}
+              color={canVerify() ? "#007AFF" : "#999"}
             />
             <Text
               style={[
                 styles.saveButtonText,
-                !canSave() ? styles.saveButtonTextDisabled : null,
+                !canVerify() ? styles.saveButtonTextDisabled : null,
               ]}
             >
-              Guardar
+              Verificar
             </Text>
           </TouchableOpacity>
 
@@ -366,7 +380,7 @@ const styles = StyleSheet.create({
     borderRadius: getResponsiveSpacing(8, 10, 12),
     borderLeftWidth: 4,
     borderLeftColor: "#007AFF",
-    marginBottom: getResponsiveSpacing(32, 40, 48),
+    marginBottom: getResponsiveSpacing(20, 25, 30),
   },
   infoText: {
     fontSize: getResponsiveFontSize(14, 16, 18),
@@ -377,8 +391,6 @@ const styles = StyleSheet.create({
   },
   actionButtonsContainer: {
     flexDirection: "row",
-    paddingHorizontal: 0,
-    paddingTop: 0,
     paddingBottom: getResponsiveSpacing(18, 22, 26),
     gap: getResponsiveSpacing(12, 16, 20),
     minHeight: getResponsiveSpacing(60, 70, 80),

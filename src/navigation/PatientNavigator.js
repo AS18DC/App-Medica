@@ -1,7 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';  
 
 // Import patient screens
 import PatientHome from '../screens/patient/PatientHome';
@@ -14,6 +14,8 @@ import EditSelectionScreen from '../screens/shared/EditSelectionScreen';
 import EditMultiSelectionScreen from '../screens/shared/EditMultiSelectionScreen';
 import EditPhoneScreen from '../screens/shared/EditPhoneScreen';
 import EditDateScreen from '../screens/shared/EditDateScreen';
+import EditEmailScreen from '../screens/shared/EditEmailScreen';
+import VerificationCodeScreen from '../screens/shared/VerificationCodeScreen';
 import PatientChat from '../screens/patient/PatientChat';
 import PatientPrescriptions from '../screens/patient/PatientPrescriptions';
 import DoctorDetail from '../screens/patient/DoctorDetail';
@@ -69,6 +71,8 @@ const PatientProfileStack = () => (
     <Stack.Screen name="EditMultiSelectionScreen" component={EditMultiSelectionScreen} />
     <Stack.Screen name="EditPhoneScreen" component={EditPhoneScreen} />
     <Stack.Screen name="EditDateScreen" component={EditDateScreen} />
+    <Stack.Screen name="EditEmailScreen" component={EditEmailScreen} />
+    <Stack.Screen name="VerificationCodeScreen" component={VerificationCodeScreen} />
     <Stack.Screen name="PatientAppointmentsMain" component={PatientAppointments} />
   </Stack.Navigator>
 );

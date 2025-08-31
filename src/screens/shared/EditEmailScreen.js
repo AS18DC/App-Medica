@@ -18,76 +18,98 @@ import {
   getResponsivePadding
 } from "../../utils/responsive";
 
-const EditFieldScreen = ({ navigation, route }) => {
+const EditEmailScreen = ({ navigation, route }) => {
   const { 
-    field, 
-    label, 
+    field,
+    label,
     currentValue, 
-    placeholder, 
-    keyboardType = "default", 
-    maxLength = null,
-    minLength = null,
-    validationRules,
-    onSave 
+    onSave, 
+    onVerification
   } = route.params;
 
-  const [value, setValue] = useState(currentValue || "");
+  const [email, setEmail] = useState(currentValue || "");
   const [error, setError] = useState("");
+  const [isValidating, setIsValidating] = useState(false);
 
-  // Validar el campo en tiempo real
-  const validateField = (inputValue) => {
-    if (!validationRules) return { isValid: true, errorMessage: "" };
-
-    let isValid = true;
-    let errorMessage = "";
-
-    // Aplicar reglas de validación específicas
-    if (validationRules.required && !inputValue.trim()) {
-      isValid = false;
-      errorMessage = `El campo ${label.toLowerCase()} es obligatorio`;
-    } else if (validationRules.minLength && inputValue.length < validationRules.minLength) {
-      isValid = false;
-      errorMessage = `Debe tener al menos ${validationRules.minLength} caracteres`;
-    } else if (validationRules.maxLength && inputValue.length > validationRules.maxLength) {
-      isValid = false;
-      errorMessage = `No puede exceder ${validationRules.maxLength} caracteres`;
-    } else if (validationRules.pattern && !validationRules.pattern.test(inputValue)) {
-      isValid = false;
-      errorMessage = validationRules.errorMessage || `Formato inválido`;
-    } else if (validationRules.range) {
-      const numValue = parseFloat(inputValue);
-      if (isNaN(numValue) || numValue < validationRules.range.min || numValue > validationRules.range.max) {
-        isValid = false;
-        errorMessage = `Debe estar entre ${validationRules.range.min} y ${validationRules.range.max}`;
-      }
+  // Validación específica para correo
+  const validateEmail = (emailValue) => {
+    if (!emailValue.trim()) {
+      return { isValid: false, errorMessage: "El correo es obligatorio" };
     }
 
-    return { isValid, errorMessage };
+    // Patrón básico de correo
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(emailValue)) {
+      return { isValid: false, errorMessage: "Formato de correo inválido" };
+    }
+
+    // Validaciones adicionales
+    if (emailValue.length < 5) {
+      return { isValid: false, errorMessage: "El correo debe tener al menos 5 caracteres" };
+    }
+
+    if (emailValue.length > 100) {
+      return { isValid: false, errorMessage: "El correo no puede exceder 100 caracteres" };
+    }
+
+    // Validar que no tenga espacios al inicio o final
+    if (emailValue !== emailValue.trim()) {
+      return { isValid: false, errorMessage: "El correo no puede tener espacios al inicio o final" };
+    }
+
+    // Validar que tenga un dominio válido
+    const parts = emailValue.split('@');
+    if (parts.length !== 2 || parts[1].length < 3) {
+      return { isValid: false, errorMessage: "El dominio del correo no es válido" };
+    }
+
+    return { isValid: true, errorMessage: "" };
   };
 
   // Manejar cambios en el input
-  const handleInputChange = (text) => {
-    setValue(text);
-    const validation = validateField(text);
-    setError(validation.isValid ? "" : validation.errorMessage);
+  const handleEmailChange = (text) => {
+    setEmail(text);
+    setError(""); // Limpiar error al escribir
   };
 
-  // Guardar cambios
-  const handleSave = () => {
-    const validation = validateField(value);
+  // Validar al perder el foco
+  const handleBlur = () => {
+    setIsValidating(true);
+    const validation = validateEmail(email);
+    setError(validation.errorMessage);
+    setIsValidating(false);
+  };
+
+  // Verificar correo
+  const handleVerify = () => {
+    const validation = validateEmail(email);
     
     if (!validation.isValid) {
       setError(validation.errorMessage);
       return;
     }
 
-    // Llamar a la función de guardado
+    //Guardar el correo
     if (onSave) {
-      onSave(field, value);
+      onSave(field, email.trim());
     }
 
-    // Navegar de vuelta
-    navigation.goBack();
+    // Navegar a la pantalla de verificación
+    navigation.navigate('VerificationCodeScreen', {
+      field,
+      label: label || 'Correo',
+      fieldType: 'email',
+      value: email.trim(),
+      onVerificationSuccess: (field, isVerified) => {
+        if (isVerified) {
+          // Marcar el campo como verificado
+          if(onVerification) {
+            onVerification(field, true);
+          }
+          navigation.goBack();
+        }
+      }
+    });
   };
 
   // Cancelar edición
@@ -97,7 +119,7 @@ const EditFieldScreen = ({ navigation, route }) => {
 
   // Verificar si se puede guardar
   const canSave = () => {
-    return value.trim() !== "" && !error;
+    return email.trim() !== "" && !error && !isValidating;
   };
 
   return (
@@ -124,31 +146,31 @@ const EditFieldScreen = ({ navigation, route }) => {
               styles.textInput,
               error ? styles.textInputError : null
             ]}
-            value={value}
-            onChangeText={handleInputChange}
-            placeholder={placeholder}
+            value={email}
+            onChangeText={handleEmailChange}
+            onBlur={handleBlur}
+            placeholder="Ingresa tu correo"
             placeholderTextColor="#999"
-            keyboardType={keyboardType}
-            maxLength={maxLength}
+            keyboardType="email-address"
+            maxLength={100}
             autoFocus={true}
-            autoCapitalize={keyboardType === "email-address" ? "none" : "words"}
+            autoCapitalize="none"
             autoCorrect={false}
+            autoComplete="email"
           />
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
-          {(maxLength || minLength) && (
-            <Text style={styles.characterCount}>
-              {value.length}{maxLength ? `/${maxLength}` : ''}{minLength ? ` (mín: ${minLength})` : ''}
-            </Text>
-          )}
+          <Text style={styles.characterCount}>
+            {email.length}/100 caracteres
+          </Text>
         </View>
 
-        {/* Información adicional si existe */}
-        {validationRules?.info && (
-          <View style={styles.infoContainer}>
-            <Ionicons name="information-circle-outline" size={20} color="#007AFF" />
-            <Text style={styles.infoText}>{validationRules.info}</Text>
-          </View>
-        )}
+        {/* Información sobre el correo */}
+        <View style={styles.infoContainer}>
+          <Ionicons name="information-circle-outline" size={20} color="#007AFF" />
+          <Text style={styles.infoText}>
+            El correo debe tener un formato válido (ejemplo@dominio.com). 
+          </Text>
+        </View>
 
         {/* Botones de acción */}
         <View style={styles.actionButtonsContainer}>
@@ -157,11 +179,11 @@ const EditFieldScreen = ({ navigation, route }) => {
               styles.saveButton,
               !canSave() ? styles.saveButtonDisabled : null,
             ]}
-            onPress={handleSave}
+            onPress={handleVerify}
             disabled={!canSave()}
           >
             <Ionicons
-              name="checkmark"
+              name="shield-checkmark-outline"
               size={20}
               color={canSave() ? "#007AFF" : "#999"}
             />
@@ -171,7 +193,7 @@ const EditFieldScreen = ({ navigation, route }) => {
                 !canSave() ? styles.saveButtonTextDisabled : null,
               ]}
             >
-              Guardar
+              Verificar
             </Text>
           </TouchableOpacity>
 
@@ -267,7 +289,7 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     backgroundColor: "#F0F8FF",
     paddingHorizontal: getResponsivePadding(16, 20, 24),
     paddingVertical: getResponsiveSpacing(12, 15, 18),
@@ -281,7 +303,9 @@ const styles = StyleSheet.create({
     color: "#007AFF",
     marginLeft: getResponsiveSpacing(8, 10, 12),
     flex: 1,
+    lineHeight: getResponsiveFontSize(20, 22, 24),
   },
+
   actionButtonsContainer: {
     flexDirection: "row",
     paddingBottom: getResponsiveSpacing(18, 22, 26),
@@ -352,4 +376,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EditFieldScreen;
+export default EditEmailScreen;
