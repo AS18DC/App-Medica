@@ -12,11 +12,8 @@ if (Platform.OS === 'web') {
 // Import context
 import { PrescriptionProvider } from './src/context/PrescriptionContext';
 import { DoctorProvider } from './src/context/DoctorContext';
-<<<<<<< HEAD
 import { ChatProvider } from './src/context/ChatContext';
-=======
 import { PatientProfileProvider } from './src/context/PatientProfileContext';
->>>>>>> profile-feature
 
 // Import screens
 import UserTypeSelection from './src/screens/UserTypeSelection';
@@ -30,35 +27,25 @@ export default function App() {
   const [userType, setUserType] = useState(null);
 
   return (
-<<<<<<< HEAD
-    <PrescriptionProvider>
-      <DoctorProvider>
-        <ChatProvider>
-=======
     <PatientProfileProvider>
       <PrescriptionProvider>
         <DoctorProvider>
->>>>>>> profile-feature
-          <NavigationContainer>
-            <StatusBar style="auto" />
-            <Stack.Navigator screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="UserTypeSelection">
-                {(props) => <UserTypeSelection {...props} setUserType={setUserType} />}
-              </Stack.Screen>
-              <Stack.Screen name="PatientNavigator" component={PatientNavigator} />
-              <Stack.Screen name="DoctorNavigator" component={DoctorNavigator} />
-              <Stack.Screen name="ClinicNavigator" component={ClinicNavigator} />
-            </Stack.Navigator>
-          </NavigationContainer>
-<<<<<<< HEAD
-        </ChatProvider>
-      </DoctorProvider>
-    </PrescriptionProvider>
-=======
+          <ChatProvider>
+            <NavigationContainer>
+              <StatusBar style="auto" />
+              <Stack.Navigator screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="UserTypeSelection">
+                  {(props) => <UserTypeSelection {...props} setUserType={setUserType} />}
+                </Stack.Screen>
+                <Stack.Screen name="PatientNavigator" component={PatientNavigator} />
+                <Stack.Screen name="DoctorNavigator" component={DoctorNavigator} />
+                <Stack.Screen name="ClinicNavigator" component={ClinicNavigator} />
+              </Stack.Navigator>
+            </NavigationContainer>
+          </ChatProvider>
         </DoctorProvider>
       </PrescriptionProvider>
     </PatientProfileProvider>
->>>>>>> profile-feature
   );
 }
 
