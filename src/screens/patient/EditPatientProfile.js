@@ -1,166 +1,4 @@
-# Medic App - Aplicación Médica
-
-Una aplicación móvil completa para gestión de citas médicas, desarrollada con React Native y Expo.
-
-## 🚀 Características
-
-### 👥 Roles de Usuario
-- **Pacientes**: Buscar doctores, agendar citas, ver historial médico
-- **Doctores**: Gestionar citas, recetas, calendario de disponibilidad
-- **Clínicas**: Administrar doctores y servicios
-
-### 📱 Funcionalidades Principales
-
-#### Para Pacientes:
-- 🔍 Búsqueda de doctores y clínicas
-- 📅 Agendamiento de citas
-- 💬 Chat con doctores
-- 📋 Historial de citas
-- ⭐ Sistema de reseñas
-
-#### Para Doctores:
-- 📊 Dashboard con estadísticas
-- 📅 Calendario de disponibilidad
-- 💊 Gestión de recetas
-- 👥 Lista de pacientes
-- 💬 Chat con pacientes
-
-#### Para Clínicas:
-- 🏥 Gestión de doctores
-- 📋 Directorio de servicios
-- 📅 Calendario institucional
-
-## 🛠️ Tecnologías Utilizadas
-
-- **React Native** - Framework principal
-- **Expo** - Plataforma de desarrollo
-- **React Navigation** - Navegación entre pantallas
-- **Context API** - Gestión de estado global
-- **Ionicons** - Iconografía
-
-## 📦 Instalación
-
-### Prerrequisitos
-- Node.js (versión 14 o superior)
-- npm o yarn
-- Expo CLI
-
-### Pasos de instalación
-
-1. **Clonar el repositorio**
-```bash
-git clone https://github.com/tu-usuario/medic-app.git
-cd medic-app
-```
-
-2. **Instalar dependencias**
-```bash
-npm install
-```
-
-3. **Iniciar el proyecto**
-```bash
-npm start
-```
-
-4. **Ejecutar en dispositivo**
-- Escanea el código QR con Expo Go (Android/iOS)
-- Presiona `w` para abrir en navegador web
-- Presiona `a` para abrir en emulador Android
-- Presiona `i` para abrir en simulador iOS
-
-## 📁 Estructura del Proyecto
-
-```
-src/
-├── components/          # Componentes reutilizables
-├── context/            # Context API para estado global
-├── navigation/         # Configuración de navegación
-├── screens/           # Pantallas de la aplicación
-│   ├── patient/       # Pantallas para pacientes
-│   ├── doctor/        # Pantallas para doctores
-│   └── clinic/        # Pantallas para clínicas
-├── styles/            # Estilos globales
-└── utils/             # Utilidades y helpers
-```
-
-## 🎨 Características de Diseño
-
-- **Responsive Design**: Adaptable a diferentes tamaños de pantalla
-- **Web Support**: Funciona tanto en móvil como en web
-- **UI/UX Moderna**: Diseño limpio y intuitivo
-- **Accesibilidad**: Interfaz accesible para todos los usuarios
-
-## 🔧 Configuración
-
-### Variables de Entorno
-Crea un archivo `.env` en la raíz del proyecto:
-
-```env
-EXPO_PUBLIC_API_URL=tu_url_api
-```
-
-### Configuración de Expo
-El proyecto está configurado para funcionar con Expo. Asegúrate de tener Expo CLI instalado:
-
-```bash
-npm install -g @expo/cli
-```
-
-## 📱 Plataformas Soportadas
-
-- ✅ iOS (nativo y web)
-- ✅ Android (nativo y web)
-- ✅ Web (React Native Web)
-
-## 🚀 Despliegue
-
-### Para Web
-```bash
-npm run build:web
-```
-
-### Para Móvil
-```bash
-expo build:android
-expo build:ios
-```
-
-## 🤝 Contribución
-
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
-
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para más detalles.
-
-## 👨‍💻 Autor
-
-**Tu Nombre**
-- GitHub: [@tu-usuario](https://github.com/tu-usuario)
-
-## 🙏 Agradecimientos
-
-- Expo por la plataforma de desarrollo
-- React Native por el framework
-- La comunidad de desarrolladores móviles
-
-## 📞 Soporte
-
-Si tienes alguna pregunta o problema, por favor abre un issue en GitHub.
-
----
-
-⭐ Si te gusta este proyecto, ¡dale una estrella en GitHub! 
-
-
-
-export default EditPatientProfile;
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -170,17 +8,33 @@ import {
   SafeAreaView,
   Image,
   Dimensions,
+  FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { isWeb, webStyles } from "../../utils/responsive";
+import { 
+  isWeb, 
+  webStyles, 
+  isTabletScreen, 
+  isDesktopScreen, 
+  getResponsiveSpacing, 
+  getResponsiveFontSize, 
+  getResponsivePadding,
+  getResponsiveImageSize 
+} from "../../utils/responsive";
 import { usePatientProfile } from "../../context/PatientProfileContext";
 import { formatDateForDisplay } from "../../utils/dateUtils";
 
+const { width: screenWidth } = Dimensions.get('window');
 
-const EditPatientProfile = ({ navigation, route }) => {
+const EditPatientProfile = ({ navigation }) => {
   // Obtener los datos del usuario desde el contexto
   const { patientProfile, updateProfileField } = usePatientProfile();
-
+  
+  // Referencia para el FlatList
+  const flatListRef = useRef(null);
+  
+  // Estado para el índice de página actual
+  const [currentPage, setCurrentPage] = useState(0);
 
   // Separar el teléfono en código de área y número
   const parsePhoneNumber = (phoneString) => {
@@ -344,6 +198,22 @@ const EditPatientProfile = ({ navigation, route }) => {
         },
         allowOther: true
       },
+      cardId: {
+        type: 'input',
+        label: 'Cédula de identidad',
+        placeholder: 'Ej: V-12345678',
+        keyboardType: 'default',
+        maxLength: 12,
+        minLength: 7,
+        validationRules: {
+          required: true,
+          minLength: 7,
+          maxLength: 12,
+          pattern: /^[Vv]-\d{7,10}$/,
+          errorMessage: 'La cédula debe tener formato V-12345678',
+          info: 'Ingresa tu número de cédula de identidad venezolana con el formato V-12345678'
+        }
+      },
       birthDate: {
         type: 'date',
         label: 'Fecha de nacimiento',
@@ -468,15 +338,12 @@ const EditPatientProfile = ({ navigation, route }) => {
     return configs[field] || { type: 'input', label: field };
   };
 
-  // Función para renderizar un item del menú
-  const renderMenuItem = (field, label, icon) => (
-    <TouchableOpacity 
-      style={styles.menuItem}
-      onPress={() => handleEditField(field)}
-    >
+  // Función para renderizar un item del menú de solo lectura
+  const renderReadOnlyMenuItem = (field, label, icon) => (
+    <View style={[styles.menuItem, styles.menuItemReadOnly]}>
       <View style={styles.menuItemLeft}>
         <View style={styles.menuItemIcon}>
-          <Ionicons name={icon} size={20} color="#666" />
+          <Ionicons name={icon} size={20} color="#999" />
         </View>
         <View style={styles.menuItemContent}>
           <Text style={styles.menuItemLabel}>{label}</Text>
@@ -501,32 +368,64 @@ const EditPatientProfile = ({ navigation, route }) => {
         </View>
       </View>
       <View style={styles.menuItemRight}>
-        <Ionicons name="chevron-forward" size={20} color="#999" />
+        <Text style={styles.readOnlyText}>Solo lectura</Text>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 
-  return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={24} color="#007AFF" />
-        </TouchableOpacity>
-        <Text style={styles.title}>Editar Perfil</Text>
-        <View style={styles.placeholder} />
-      </View>
+  // Función para renderizar un item del menú editable
+  const renderMenuItem = (field, label, icon) => {
+    // Campos de solo lectura
+    if (field === 'name' || field === 'birthDate' || field === 'cardId') {
+      return renderReadOnlyMenuItem(field, label, icon);
+    }
 
-      {/* Menú de edición */}
-      <ScrollView 
-        style={styles.menuContainer}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.menuContentContainer}
+    return (
+      <TouchableOpacity 
+        style={styles.menuItem}
+        onPress={() => handleEditField(field)}
       >
-        {/* User Image Section - Ahora dentro del scroll */}
+        <View style={styles.menuItemLeft}>
+          <View style={styles.menuItemIcon}>
+            <Ionicons name={icon} size={20} color="#666" />
+          </View>
+          <View style={styles.menuItemContent}>
+            <Text style={styles.menuItemLabel}>{label}</Text>
+            <Text style={styles.menuItemValue}>
+              {field === 'phone' 
+                ? `${editingUser.areaCode} ${editingUser.phoneNumber}` 
+                : field === 'birthDate' && editingUser[field]
+                ? formatDateForDisplay(editingUser[field], 'long')
+                : field === 'allergies' || field === 'disability'
+                ? Array.isArray(editingUser[field]) && editingUser[field].length > 0
+                  ? editingUser[field].length === 1 
+                    ? editingUser[field][0]
+                    : editingUser[field].length <= 3
+                    ? editingUser[field].join(', ')
+                    : `${editingUser[field].length} seleccionadas`
+                  : "No especificado"
+                : editingUser[field] 
+                ? String(editingUser[field])
+                : "No especificado"
+              }
+            </Text>
+          </View>
+        </View>
+        <View style={styles.menuItemRight}>
+          <Ionicons name="chevron-forward" size={20} color="#999" />
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  // Función para renderizar la página de Datos de Perfil
+  const renderProfilePage = () => (
+    <View style={styles.pageContainer}>
+      <View 
+        contentContainerStyle={styles.pageContentContainer}
+ 
+      >
+        {/* User Image Section - Ahora hace scroll */}
         <View style={styles.imageSection}>
           <Image source={{ uri: editingUser.image }} style={styles.userImage} />
           <TouchableOpacity style={styles.changeImageButton}>
@@ -537,23 +436,27 @@ const EditPatientProfile = ({ navigation, route }) => {
 
         {/* Línea superior sutil */}
         <View style={styles.sectionDivider} />
+
         {/* Sección: Datos de Perfil */}
         <View style={styles.menuSection}>
-          <Text style={styles.menuSectionTitle}>Datos de Perfil</Text>
-          
           {renderMenuItem('name', 'Nombre completo', 'person-outline')}
+          {renderMenuItem('cardId', 'Cédula de identidad', 'card-outline')}
           {renderMenuItem('email', 'Email', 'mail-outline')}
           {renderMenuItem('phone', 'Teléfono', 'call-outline')}
           {renderMenuItem('city', 'Ciudad', 'location-outline')}
         </View>
+      </View>
+    </View>
+  );
 
-        {/* Línea divisoria entre secciones */}
-        <View style={styles.sectionDivider} />
-
+  // Función para renderizar la página de Datos Médicos
+  const renderMedicalPage = () => (
+    <View style={styles.pageContainer}>
+      <View 
+        contentContainerStyle={styles.pageContentContainer}
+      >
         {/* Sección: Datos Médicos */}
         <View style={styles.menuSection}>
-          <Text style={styles.menuSectionTitle}>Datos Médicos</Text>
-          
           {renderMenuItem('birthDate', 'Fecha de nacimiento', 'calendar-outline')}
           {renderMenuItem('gender', 'Sexo', 'person-outline')}
           {renderMenuItem('height', 'Altura (cm)', 'resize-outline')}
@@ -562,10 +465,99 @@ const EditPatientProfile = ({ navigation, route }) => {
           {renderMenuItem('allergies', 'Alergias', 'warning-outline')}
           {renderMenuItem('disability', 'Discapacidad', 'accessibility-outline')}
         </View>
-      </ScrollView>
+      </View>
+    </View>
+  );
 
-      {/* Línea inferior sutil */}
-      <View style={styles.sectionDivider} />
+  // Datos para el FlatList
+  const carouselData = [
+    { id: 'profile', render: renderProfilePage },
+    { id: 'medical', render: renderMedicalPage }
+  ];
+
+  // Función para renderizar cada página del carrusel
+  const renderCarouselItem = ({ item }) => (
+    <View style={styles.carouselItem}>
+      {item.render()}
+    </View>
+  );
+
+  // Función para manejar el cambio de página
+  const handlePageChange = (event) => {
+    const contentOffset = event.nativeEvent.contentOffset.x;
+    const itemWidth = isWeb ? (isDesktopScreen() ? 1000 : isTabletScreen() ? 800 : screenWidth) : screenWidth;
+    const page = Math.round(contentOffset / itemWidth);
+    setCurrentPage(page);
+  };
+
+  // Indicadores de página mejorados
+  const renderPageIndicators = () => (
+    <View style={styles.pageIndicators}>
+      {carouselData.map((item, index) => (
+        <TouchableOpacity
+          key={index}
+          style={[
+            styles.pageIndicator
+          ]}
+          onPress={() => {
+            flatListRef.current?.scrollToIndex({ index, animated: true });
+          }}
+        >
+          <Text style={[
+            styles.pageIndicatorText,
+            currentPage === index && styles.pageIndicatorTextActive
+          ]}>
+            {item.id === 'profile' ? 'Información personal' : 'Datos médicos'}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View 
+        style={styles.mainScrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.mainScrollContent}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#007AFF" />
+          </TouchableOpacity>
+          <Text style={styles.title}>Editar Perfil</Text>
+          <View style={styles.placeholder} />
+        </View>
+
+        {/* Indicadores de página - Ahora en la parte superior */}
+        {renderPageIndicators()}
+
+        {/* Carrusel horizontal - SOLO para las secciones de datos */}
+        <ScrollView style={styles.carouselContainer} showsVerticalScrollIndicator={false}>
+          <FlatList
+            ref={flatListRef}
+            data={carouselData}
+            renderItem={renderCarouselItem}
+            keyExtractor={(item) => item.id}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={handlePageChange}
+            onScroll={handlePageChange}
+            getItemLayout={(data, index) => ({
+              length: isWeb ? (isDesktopScreen() ? 1000 : isTabletScreen() ? 800 : screenWidth) : screenWidth,
+              offset: (isWeb ? (isDesktopScreen() ? 1000 : isTabletScreen() ? 800 : screenWidth) : screenWidth) * index,
+              index,
+            })}
+            style={styles.carousel}
+            scrollEnabled={true}
+          />
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };
@@ -573,90 +565,124 @@ const EditPatientProfile = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
-    ...(isWeb && webStyles.container),
+    backgroundColor: '#F8F9FA'
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
+    paddingHorizontal: getResponsivePadding(20, 30, 40),
+    paddingTop: getResponsiveSpacing(20, 25, 30),
+    paddingBottom: getResponsiveSpacing(10, 15, 20),
+    marginBottom: 5,
   },
   backButton: {
-    padding: 8,
+    padding: getResponsiveSpacing(8, 10, 12),
   },
   title: {
-    fontSize: 20,
+    fontSize: getResponsiveFontSize(20, 24, 28),
     fontWeight: "bold",
     color: "#1A1A1A",
   },
   placeholder: {
-    width: 40,
+    width: getResponsiveSpacing(40, 50, 60),
   },
   imageSection: {
     alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+    paddingVertical: getResponsiveSpacing(20, 25, 30),
+    paddingHorizontal: getResponsivePadding(20, 30, 40),
+    marginBottom: getResponsiveSpacing(10, 15, 20),
   },
   userImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginBottom: 12,
+    width: getResponsiveImageSize(80, 100, 120),
+    height: getResponsiveImageSize(80, 100, 120),
+    borderRadius: getResponsiveImageSize(40, 50, 60),
+    marginBottom: getResponsiveSpacing(12, 15, 18),
   },
   changeImageButton: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#007AFF",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: getResponsiveSpacing(12, 16, 20),
+    paddingVertical: getResponsiveSpacing(6, 8, 10),
+    borderRadius: getResponsiveSpacing(16, 20, 24),
   },
   changeImageText: {
     color: "#FFFFFF",
-    fontSize: 12,
+    fontSize: getResponsiveFontSize(12, 14, 16),
     fontWeight: "500",
-    marginLeft: 6,
+    marginLeft: getResponsiveSpacing(6, 8, 10),
   },
   sectionDivider: {
     height: 1,
     backgroundColor: "#E0E0E0",
-    marginHorizontal: 20,
-    marginVertical: 8,
+    marginHorizontal: getResponsivePadding(20, 30, 40),
+    marginVertical: getResponsiveSpacing(8, 12, 16),
   },
-  menuContainer: {
+  mainScrollView: {
     flex: 1,
+    width: '100%',
     ...(isWeb && {
-      maxWidth: 800,
+      maxWidth: isDesktopScreen() ? 1200 : isTabletScreen() ? 900 : '100%',
       margin: '0 auto',
     }),
   },
-  menuContentContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 20,
+  mainScrollContent: {
+    flexGrow: 1,
+    paddingBottom: getResponsiveSpacing(10, 15, 20),
+    width: '100%',
+    ...(isWeb && {
+      alignItems: 'center',
+    }),
+  },
+  carouselContainer: {
+    height: 'auto',
+    position: 'relative',
+    width: '100%',
+    ...(isWeb && {
+      maxWidth: isDesktopScreen() ? 1000 : isTabletScreen() ? 800 : '100%',
+      margin: '0 auto',
+      alignSelf: 'center',
+    }),
+  },
+  carousel: {
+    height: '100%',
+    width: '100%',
+  },
+  carouselItem: {
+    width: isWeb ? (isDesktopScreen() ? 1000 : isTabletScreen() ? 800 : screenWidth) : screenWidth,
+    height: '100%',
+    alignSelf: 'center',
+  },
+  pageContainer: {
+    height: '100%',
+    paddingHorizontal: getResponsivePadding(20, 30, 40),
+    paddingTop: getResponsiveSpacing(16, 20, 24),
+    paddingBottom: getResponsiveSpacing(20, 30, 40),
+    width: '100%',
+    ...(isWeb && {
+      maxWidth: isDesktopScreen() ? 1000 : isTabletScreen() ? 800 : '100%',
+      margin: '0 auto',
+      alignSelf: 'center',
+    }),
+  },
+  pageContentContainer: {
+    paddingBottom: getResponsiveSpacing(20, 30, 40),
+    flexGrow: 1,
   },
   menuSection: {
-    marginBottom: 24,
-  },
-  menuSectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1A1A1A",
-    marginBottom: 16,
-    paddingHorizontal: 4,
+    marginBottom: getResponsiveSpacing(10, 15, 20),
+    paddingBottom: getResponsiveSpacing(10, 15, 20),
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    marginBottom: 8,
+    borderRadius: getResponsiveSpacing(12, 16, 20),
+    paddingHorizontal: getResponsivePadding(16, 20, 24),
+    paddingVertical: getResponsiveSpacing(14, 18, 22),
+    marginBottom: getResponsiveSpacing(10, 15, 20),
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -673,31 +699,66 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   menuItemIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: getResponsiveImageSize(40, 50, 60),
+    height: getResponsiveImageSize(40, 50, 60),
+    borderRadius: getResponsiveImageSize(20, 25, 30),
     backgroundColor: "#F0F8FF",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 16,
+    marginRight: getResponsiveSpacing(16, 20, 24),
   },
   menuItemContent: {
     flex: 1,
   },
   menuItemLabel: {
-    fontSize: 16,
+    fontSize: getResponsiveFontSize(16, 18, 20),
     fontWeight: "600",
     color: "#1A1A1A",
-    marginBottom: 4,
+    marginBottom: getResponsiveSpacing(4, 6, 8),
   },
   menuItemValue: {
-    fontSize: 14,
+    fontSize: getResponsiveFontSize(14, 16, 18),
     color: "#666",
   },
   menuItemRight: {
-    marginLeft: 16,
+    marginLeft: getResponsiveSpacing(16, 20, 24),
+  },
+
+  pageIndicators: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: getResponsiveSpacing(12, 16, 20),
+    paddingHorizontal: getResponsivePadding(20, 30, 40),
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  pageIndicator: {
+    paddingHorizontal: getResponsiveSpacing(16, 20, 24),
+    paddingVertical: getResponsiveSpacing(8, 10, 12),
+    marginHorizontal: getResponsiveSpacing(6, 8, 10),
+    borderRadius: getResponsiveSpacing(16, 20, 24),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pageIndicatorText: {
+    fontSize: getResponsiveFontSize(16, 18, 20),
+    fontWeight: '500',
+    color: '#666666',
+  },
+  pageIndicatorTextActive: {
+    color: '#007AFF',
+    fontWeight: '600',
+  },
+  menuItemReadOnly: {
+    opacity: 0.7,
+    backgroundColor: '#F8F9FA',
+  },
+  readOnlyText: {
+    fontSize: getResponsiveFontSize(12, 14, 16),
+    color: '#999999',
+    fontStyle: 'italic',
   },
 });
 
 export default EditPatientProfile;
-

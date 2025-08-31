@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,29 +9,28 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { usePatientProfile } from '../../context/PatientProfileContext';
+import { formatDateForDisplay } from '../../utils/dateUtils';
 
-const PatientProfile = ({ navigation }) => {
-  // Mock user data
-  const user = {
-    name: 'Maria González',
-    email: 'maria.gonzalez@email.com',
-    phone: '+34 612 345 678',
-    membershipDate: 'Enero 2024',
-    image: 'https://via.placeholder.com/100',
-  };
+const PatientProfile = ({ navigation, route }) => {
+  // Obtener los datos del usuario desde el contexto
+  const { patientProfile } = usePatientProfile();
+  
+  // Usar los datos del contexto directamente
+  const user = patientProfile;
 
   const menuItems = [
     {
       id: 1,
       title: 'Citas próximas',
       icon: 'calendar-outline',
-      action: () => navigation.navigate('Appointments'),
+      action: () => navigation.navigate('PatientAppointmentsMain'),
     },
     {
       id: 2,
       title: 'Historial de citas',
       icon: 'time-outline',
-      action: () => navigation.navigate('Appointments'),
+      action: () => navigation.navigate('PatientAppointmentsMain'),
     },
     {
       id: 3,
@@ -131,15 +130,15 @@ const PatientProfile = ({ navigation }) => {
             <Image source={{ uri: user.image }} style={styles.userImage} />
             <View style={styles.userDetails}>
               <Text style={styles.userName}>{user.name}</Text>
-              <Text style={styles.userEmail}>{user.email}</Text>
-              <Text style={styles.membershipText}>
-                Miembro desde {user.membershipDate}
-              </Text>
+              <Text style={styles.membershipText}>Miembro desde {user.membershipDate}</Text>
+
             </View>
           </View>
-          <TouchableOpacity style={styles.editButton}>
+          <TouchableOpacity 
+            style={styles.editButton}
+            onPress={() => navigation.navigate('EditPatientProfile', { userData: user })}
+          >
             <Ionicons name="pencil" size={20} color="#007AFF" />
-            <Text style={styles.editButtonText}>Editar</Text>
           </TouchableOpacity>
         </View>
 
@@ -151,14 +150,18 @@ const PatientProfile = ({ navigation }) => {
               <Ionicons name="mail-outline" size={20} color="#666" />
               <Text style={styles.infoText}>{user.email}</Text>
             </View>
-            <View style={styles.infoRow}>
-              <Ionicons name="call-outline" size={20} color="#666" />
-              <Text style={styles.infoText}>{user.phone}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Ionicons name="calendar-outline" size={20} color="#666" />
-              <Text style={styles.infoText}>Miembro desde {user.membershipDate}</Text>
-            </View>
+                         <View style={styles.infoRow}>
+               <Ionicons name="call-outline" size={20} color="#666" />
+               <Text style={styles.infoText}>{user.phone}</Text>
+             </View>
+             <View style={styles.infoRow}>
+               <Ionicons name="location-outline" size={20} color="#666" />
+               <Text style={styles.infoText}>{user.city}</Text>
+             </View>
+             <View style={styles.infoRow}>
+               <Ionicons name="calendar-outline" size={20} color="#666" />
+               <Text style={styles.infoText}>Miembro desde {user.membershipDate}</Text>
+             </View>
           </View>
         </View>
 
@@ -246,12 +249,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   userEmail: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#666',
     marginBottom: 4,
   },
   membershipText: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#007AFF',
     fontWeight: '500',
   },

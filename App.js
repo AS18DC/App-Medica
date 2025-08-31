@@ -12,7 +12,11 @@ if (Platform.OS === 'web') {
 // Import context
 import { PrescriptionProvider } from './src/context/PrescriptionContext';
 import { DoctorProvider } from './src/context/DoctorContext';
+<<<<<<< HEAD
 import { ChatProvider } from './src/context/ChatContext';
+=======
+import { PatientProfileProvider } from './src/context/PatientProfileContext';
+>>>>>>> profile-feature
 
 // Import screens
 import UserTypeSelection from './src/screens/UserTypeSelection';
@@ -26,9 +30,15 @@ export default function App() {
   const [userType, setUserType] = useState(null);
 
   return (
+<<<<<<< HEAD
     <PrescriptionProvider>
       <DoctorProvider>
         <ChatProvider>
+=======
+    <PatientProfileProvider>
+      <PrescriptionProvider>
+        <DoctorProvider>
+>>>>>>> profile-feature
           <NavigationContainer>
             <StatusBar style="auto" />
             <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -40,9 +50,15 @@ export default function App() {
               <Stack.Screen name="ClinicNavigator" component={ClinicNavigator} />
             </Stack.Navigator>
           </NavigationContainer>
+<<<<<<< HEAD
         </ChatProvider>
       </DoctorProvider>
     </PrescriptionProvider>
+=======
+        </DoctorProvider>
+      </PrescriptionProvider>
+    </PatientProfileProvider>
+>>>>>>> profile-feature
   );
 }
 
