@@ -202,7 +202,7 @@ const DoctorPatients = ({ navigation }) => {
           <Image
             source={{ uri: patient.avatar }}
             style={styles.patientAvatar}
-            defaultSource={require('../../../assets/default-avatar.png')}
+            defaultSource={{ uri: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face' }}
           />
           <View style={styles.patientDetails}>
             <Text style={[styles.patientName, { fontSize: getResponsiveFontSize(16, 17, 18) }]}>
@@ -303,7 +303,7 @@ const DoctorPatients = ({ navigation }) => {
                 <Image
                   source={{ uri: selectedPatient.avatar }}
                   style={styles.modalPatientAvatar}
-                  defaultSource={require('../../../assets/default-avatar.png')}
+                  defaultSource={{ uri: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face' }}
                 />
                 <Text style={[styles.modalPatientName, { fontSize: getResponsiveFontSize(18, 20, 22) }]}>
                   {selectedPatient.name}
