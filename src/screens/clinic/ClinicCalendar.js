@@ -1,4 +1,9 @@
+// --Imports de React--
+// Importa las funcionalidades básicas de React y hooks de estado
 import React, { useState } from 'react';
+
+// --Imports de React Native--
+// Importa componentes básicos de React Native para la interfaz
 import {
   View,
   Text,
@@ -7,12 +12,18 @@ import {
   TouchableOpacity,
   SafeAreaView,
 } from 'react-native';
+
+// --Imports de iconos--
+// Importa iconos de Ionicons para la interfaz de usuario
 import { Ionicons } from '@expo/vector-icons';
 
 const ClinicCalendar = ({ navigation }) => {
+  // --Estado de fecha seleccionada--
+  // Almacena la fecha actualmente seleccionada en el calendario
   const [selectedDate, setSelectedDate] = useState(null);
 
-  // Mock calendar data
+  // --Datos del calendario--
+  // Datos simulados del calendario con meses y semanas
   const months = [
     {
       name: 'Julio 2024',
@@ -85,7 +96,8 @@ const ClinicCalendar = ({ navigation }) => {
     },
   ];
 
-  // Mock available time slots
+  // --Horarios disponibles--
+  // Lista de horarios disponibles para reservar citas
   const availableTimeSlots = [
     { time: '9:00 AM', room: 'Sala 1', available: true },
     { time: '9:30 AM', room: 'Sala 2', available: true },
@@ -101,18 +113,26 @@ const ClinicCalendar = ({ navigation }) => {
     { time: '4:30 PM', room: 'Sala 2', available: true },
   ];
 
+  // --Días de la semana--
+  // Abreviaciones de los días de la semana para el encabezado del calendario
   const weekDays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
+  // --Función de selección de fecha--
+  // Maneja la selección de una fecha en el calendario
   const handleDateSelect = (day) => {
     setSelectedDate(day);
   };
 
+  // --Función de selección de horario--
+  // Maneja la selección de un horario disponible para reservar
   const handleTimeSlotSelect = (timeSlot) => {
     if (timeSlot.available) {
       console.log('Selected time slot:', timeSlot);
     }
   };
 
+  // --Función de renderizado del calendario--
+  // Renderiza un mes completo del calendario con sus semanas y días
   const renderCalendar = (month) => (
     <View key={month.name} style={styles.monthContainer}>
       <Text style={styles.monthTitle}>{month.name}</Text>
@@ -213,25 +233,41 @@ const ClinicCalendar = ({ navigation }) => {
   );
 };
 
+// --Estilos del componente--
+// Define todos los estilos visuales del calendario
 const styles = StyleSheet.create({
+  // --Contenedor principal--
+  // Estilo del contenedor principal de la pantalla
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
+  
+  // --Encabezado--
+  // Estilo del encabezado de la pantalla
   header: {
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
   },
+  
+  // --Título principal--
+  // Estilo del título principal del calendario
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#1A1A1A',
   },
+  
+  // --Contenedor del calendario--
+  // Estilo del contenedor que envuelve todo el calendario
   calendarContainer: {
     paddingHorizontal: 20,
     marginBottom: 24,
   },
+  
+  // --Contenedor del mes--
+  // Estilo del contenedor de cada mes individual
   monthContainer: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -246,6 +282,9 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  
+  // --Título del mes--
+  // Estilo del título que muestra el nombre del mes
   monthTitle: {
     fontSize: 18,
     fontWeight: '600',
@@ -253,10 +292,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
+  
+  // --Encabezado de días de la semana--
+  // Estilo del encabezado que muestra los días de la semana
   weekDaysHeader: {
     flexDirection: 'row',
     marginBottom: 8,
   },
+  
+  // --Texto del día de la semana--
+  // Estilo del texto de cada día de la semana en el encabezado
   weekDayHeader: {
     flex: 1,
     textAlign: 'center',
@@ -264,10 +309,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#666',
   },
+  
+  // --Fila de la semana--
+  // Estilo de cada fila que representa una semana
   weekRow: {
     flexDirection: 'row',
     marginBottom: 8,
   },
+  
+  // --Celda del día--
+  // Estilo de cada celda individual que representa un día
   dayCell: {
     flex: 1,
     aspectRatio: 1,
@@ -276,38 +327,65 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     margin: 2,
   },
+  
+  // --Día no disponible--
+  // Estilo para días que no están disponibles para citas
   dayUnavailable: {
     backgroundColor: '#F0F0F0',
   },
+  
+  // --Día seleccionado--
+  // Estilo para el día que está actualmente seleccionado
   daySelected: {
     backgroundColor: '#FF9500',
   },
+  
+  // --Texto del día--
+  // Estilo del texto que muestra el número del día
   dayText: {
     fontSize: 16,
     fontWeight: '500',
     color: '#1A1A1A',
   },
+  
+  // --Texto del día no disponible--
+  // Estilo del texto para días que no están disponibles
   dayTextUnavailable: {
     color: '#CCC',
   },
+  
+  // --Texto del día seleccionado--
+  // Estilo del texto para el día que está seleccionado
   dayTextSelected: {
     color: '#FFFFFF',
   },
+  
+  // --Contenedor de horarios--
+  // Estilo del contenedor que muestra los horarios disponibles
   timeSlotsContainer: {
     paddingHorizontal: 20,
     marginBottom: 24,
   },
+  
+  // --Título de horarios--
+  // Estilo del título de la sección de horarios disponibles
   timeSlotsTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#1A1A1A',
     marginBottom: 16,
   },
+  
+  // --Cuadrícula de horarios--
+  // Estilo de la cuadrícula que organiza los horarios disponibles
   timeSlotsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
   },
+  
+  // --Tarjeta de horario--
+  // Estilo de cada tarjeta individual que representa un horario
   timeSlotCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -323,29 +401,47 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  
+  // --Horario no disponible--
+  // Estilo para horarios que no están disponibles
   timeSlotUnavailable: {
     backgroundColor: '#F0F0F0',
   },
+  
+  // --Texto del horario--
+  // Estilo del texto que muestra la hora del horario
   timeSlotTime: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1A1A1A',
     marginBottom: 4,
   },
+  
+  // --Texto de la sala--
+  // Estilo del texto que muestra la sala del horario
   timeSlotRoom: {
     fontSize: 14,
     color: '#666',
     marginBottom: 12,
   },
+  
+  // --Texto de horario no disponible--
+  // Estilo del texto para horarios que no están disponibles
   timeSlotTextUnavailable: {
     color: '#CCC',
   },
+  
+  // --Botón de reservar--
+  // Estilo del botón para reservar un horario
   reserveButton: {
     backgroundColor: '#FF9500',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
   },
+  
+  // --Texto del botón de reservar--
+  // Estilo del texto del botón de reservar
   reserveButtonText: {
     fontSize: 14,
     color: '#FFFFFF',

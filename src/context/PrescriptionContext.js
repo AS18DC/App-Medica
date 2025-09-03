@@ -1,7 +1,13 @@
+// --Imports de React--
+// Importa las funcionalidades básicas de React para crear contexto y manejar estado
 import React, { createContext, useContext, useState } from 'react';
 
+// --Contexto de prescripciones--
+// Contexto principal para manejar las prescripciones médicas en toda la aplicación
 const PrescriptionContext = createContext();
 
+// --Hook personalizado--
+// Hook para usar el contexto de prescripciones en otros componentes
 export const usePrescriptions = () => {
   const context = useContext(PrescriptionContext);
   if (!context) {
@@ -10,7 +16,11 @@ export const usePrescriptions = () => {
   return context;
 };
 
+// --Proveedor del contexto--
+// Componente que envuelve la aplicación y proporciona el contexto de prescripciones
 export const PrescriptionProvider = ({ children }) => {
+  // --Estado de prescripciones--
+  // Lista de prescripciones médicas del paciente
   const [prescriptions, setPrescriptions] = useState([
     {
       id: 1,
@@ -94,24 +104,34 @@ export const PrescriptionProvider = ({ children }) => {
     },
   ]);
 
+  // --Función para agregar prescripción--
+  // Añade una nueva prescripción médica a la lista
   const addPrescription = (prescription) => {
     setPrescriptions(prev => [...prev, prescription]);
   };
 
+  // --Función para actualizar prescripción--
+  // Actualiza una prescripción médica existente
   const updatePrescription = (id, updatedPrescription) => {
     setPrescriptions(prev => 
       prev.map(p => p.id === id ? { ...p, ...updatedPrescription } : p)
     );
   };
 
+  // --Función para eliminar prescripción--
+  // Elimina una prescripción médica de la lista
   const deletePrescription = (id) => {
     setPrescriptions(prev => prev.filter(p => p.id !== id));
   };
 
+  // --Función para obtener prescripciones por paciente--
+  // Filtra las prescripciones por nombre del paciente
   const getPrescriptionsByPatient = (patientName) => {
     return prescriptions.filter(p => p.patientName === patientName);
   };
 
+  // --Valor del contexto--
+  // Objeto que contiene el estado y las funciones de prescripciones
   const value = {
     prescriptions,
     addPrescription,

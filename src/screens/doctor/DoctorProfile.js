@@ -1,4 +1,9 @@
+// --Imports de React--
+// Importa las funcionalidades básicas de React
 import React from 'react';
+
+// --Imports de React Native--
+// Importa componentes básicos de React Native para la interfaz
 import {
   View,
   Text,
@@ -8,10 +13,14 @@ import {
   SafeAreaView,
   Image,
 } from 'react-native';
+
+// --Imports de iconos--
+// Importa iconos de Ionicons para la interfaz de usuario
 import { Ionicons } from '@expo/vector-icons';
 
 const DoctorProfile = ({ navigation }) => {
-  // Mock doctor data
+  // --Datos del doctor--
+  // Información simulada del perfil del doctor
   const doctor = {
     name: 'Dr. Lucas Ramirez',
     specialty: 'Cardiología',
@@ -36,6 +45,8 @@ const DoctorProfile = ({ navigation }) => {
     address: 'Calle Principal 123, Madrid',
   };
 
+  // --Elementos del menú--
+  // Lista de opciones disponibles en el perfil del doctor
   const menuItems = [
     {
       id: 1,
@@ -75,6 +86,8 @@ const DoctorProfile = ({ navigation }) => {
     },
   ];
 
+  // --Función de renderizado de elemento del menú--
+  // Renderiza cada elemento individual del menú de opciones
   const renderMenuItem = (item) => (
     <TouchableOpacity
       key={item.id}
@@ -208,21 +221,31 @@ const DoctorProfile = ({ navigation }) => {
   );
 };
 
+// --Estilos del componente--
+// Define todos los estilos visuales del perfil del doctor
 const styles = StyleSheet.create({
+  // --Contenedor principal--
+  // Estilo del contenedor principal de la pantalla
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
+  // --Encabezado--
+  // Estilo del encabezado de la pantalla
   header: {
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
   },
+  // --Título principal--
+  // Estilo del título principal de la pantalla
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#1A1A1A',
   },
+  // --Contenedor de información del doctor--
+  // Estilo del contenedor principal de información del doctor
   doctorInfoContainer: {
     paddingHorizontal: 20,
     paddingVertical: 20,
@@ -239,40 +262,56 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  // --Información del doctor--
+  // Estilo del contenedor de información básica del doctor
   doctorInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
   },
+  // --Imagen del doctor--
+  // Estilo de la imagen de perfil del doctor
   doctorImage: {
     width: 100,
     height: 100,
     borderRadius: 50,
     marginRight: 16,
   },
+  // --Detalles del doctor--
+  // Estilo del contenedor de detalles del doctor
   doctorDetails: {
     flex: 1,
   },
+  // --Nombre del doctor--
+  // Estilo del nombre principal del doctor
   doctorName: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#1A1A1A',
     marginBottom: 4,
   },
+  // --Especialidad del doctor--
+  // Estilo de la especialidad médica del doctor
   doctorSpecialty: {
     fontSize: 16,
     color: '#666',
     marginBottom: 4,
   },
+  // --Número de licencia--
+  // Estilo del número de licencia médica del doctor
   licenseNumber: {
     fontSize: 14,
     color: '#007AFF',
     fontWeight: '500',
   },
+  // --Botones de acción--
+  // Estilo del contenedor de botones de acción
   actionButtons: {
     flexDirection: 'row',
     gap: 12,
   },
+  // --Botón de editar--
+  // Estilo del botón para editar el perfil
   editButton: {
     flex: 1,
     flexDirection: 'row',
@@ -290,6 +329,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 6,
   },
+  // --Botón de compartir--
+  // Estilo del botón para compartir el perfil
   shareButton: {
     flex: 1,
     flexDirection: 'row',
@@ -307,9 +348,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 6,
   },
+  // --Contenedor de sección--
+  // Estilo del contenedor de cada sección de información
   section: {
     marginBottom: 24,
   },
+  // --Título de sección--
+  // Estilo del título de cada sección de información
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
@@ -317,6 +362,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 20,
   },
+  // --Tarjeta de información--
+  // Estilo de la tarjeta que contiene información del doctor
   infoCard: {
     backgroundColor: '#FFFFFF',
     marginHorizontal: 20,
@@ -331,22 +378,30 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  // --Texto de información--
+  // Estilo del texto descriptivo del doctor
   aboutText: {
     fontSize: 14,
     color: '#666',
     lineHeight: 22,
     marginBottom: 16,
   },
+  // --Fila de información--
+  // Estilo de cada fila individual de información
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
   },
+  // --Texto de información--
+  // Estilo del texto en cada fila de información
   infoText: {
     fontSize: 14,
     color: '#666',
     marginLeft: 8,
   },
+  // --Tarjeta de horario--
+  // Estilo de la tarjeta que contiene el horario del doctor
   scheduleCard: {
     backgroundColor: '#FFFFFF',
     marginHorizontal: 20,

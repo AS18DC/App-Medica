@@ -1,8 +1,15 @@
+// --Imports de React Native--
+// Importa las funcionalidades básicas de React y React Native
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+
+// --Imports de iconos--
+// Importa iconos de Ionicons para la interfaz de usuario
 import { Ionicons } from '@expo/vector-icons';
 
 const MessageStatus = ({ status, style }) => {
+  // --Obtener icono de estado--
+  // Retorna el icono y color apropiados según el estado del mensaje
   const getStatusIcon = () => {
     switch (status || 'sending') {
       case 'sending':
@@ -18,6 +25,8 @@ const MessageStatus = ({ status, style }) => {
     }
   };
 
+  // --Icono del estado--
+  // Almacena la información del icono a mostrar
   const icon = getStatusIcon();
 
   return (
@@ -28,6 +37,8 @@ const MessageStatus = ({ status, style }) => {
 };
 
 const styles = StyleSheet.create({
+  // --Contenedor del estado--
+  // Contenedor para mostrar el icono de estado del mensaje
   container: {
     marginLeft: 4,
     justifyContent: 'center',

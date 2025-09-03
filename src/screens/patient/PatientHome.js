@@ -1,4 +1,8 @@
+// --Imports de React y React Native--
+// {{importa React, useState y componentes básicos de React Native}}
 import React, { useState } from 'react';
+// --Imports de componentes de React Native--
+// {{importa View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, TextInput, Image, Modal y Alert}}
 import {
   View,
   Text,
@@ -11,16 +15,31 @@ import {
   Modal,
   Alert,
 } from 'react-native';
+// --Import de iconos--
+// {{importa Ionicons de la librería de iconos de Expo}}
 import { Ionicons } from '@expo/vector-icons';
+// --Import de utilidades responsivas--
+// {{importa funciones para hacer la interfaz responsiva en web, móvil y tablet}}
 import { isWeb, isMobileScreen, isTabletScreen, isDesktopScreen, webStyles, getResponsiveSpacing, getResponsiveFontSize, getResponsivePadding, getGridColumns } from '../../utils/responsive';
 
+// --Componente PatientHome--
+// {{pantalla principal del paciente con búsqueda y recomendaciones de doctores}}
 const PatientHome = ({ navigation }) => {
+  // --Estado de búsqueda--
+  // {{almacena el texto de búsqueda del usuario}}
   const [searchQuery, setSearchQuery] = useState('');
+  // --Estado del modal de filtros--
+  // {{controla la visibilidad del modal de filtros}}
   const [showFilterModal, setShowFilterModal] = useState(false);
+  // --Estado de especialidad seleccionada--
+  // {{almacena la especialidad médica seleccionada para filtrar}}
   const [selectedSpecialty, setSelectedSpecialty] = useState(null);
+  // --Estado de clínica seleccionada--
+  // {{almacena la clínica seleccionada para filtrar}}
   const [selectedClinic, setSelectedClinic] = useState(null);
 
-  // Mock data for nearby doctors
+  // --Datos mock de doctores cercanos--
+  // {{lista de doctores cercanos con información personal y profesional}}
   const nearbyDoctors = [
     {
       id: 1,
@@ -51,7 +70,8 @@ const PatientHome = ({ navigation }) => {
     },
   ];
 
-  // Mock data for top rated doctors
+  // --Datos mock de doctores mejor calificados--
+  // {{lista de doctores con las mejores calificaciones del sistema}}
   const topRatedDoctors = [
     {
       id: 4,
@@ -82,7 +102,8 @@ const PatientHome = ({ navigation }) => {
     },
   ];
 
-  // Medical specialties
+  // --Especialidades médicas--
+  // {{lista de especialidades médicas disponibles para filtrado}}
   const medicalSpecialties = [
     'Cardiología',
     'Dermatología',
@@ -98,7 +119,8 @@ const PatientHome = ({ navigation }) => {
     'Gastroenterología',
   ];
 
-  // Clinics
+  // --Lista de clínicas--
+  // {{lista de clínicas disponibles para filtrado}}
   const clinics = [
     'Clínica San Martín',
     'Centro Médico Santa María',
@@ -107,46 +129,62 @@ const PatientHome = ({ navigation }) => {
     'Centro de Especialidades',
   ];
 
+  // --Función de búsqueda--
+  // {{maneja la búsqueda de doctores por texto}}
   const handleSearch = () => {
     if (searchQuery.trim()) {
-      // Implement search functionality
+      // --Implementación de búsqueda--
+      // {{lógica para buscar doctores por consulta}}
       console.log('Searching for:', searchQuery);
     }
   };
 
+  // --Función de selección de doctor--
+  // {{navega a la pantalla de detalles del doctor}}
   const handleDoctorPress = (doctor) => {
     navigation.navigate('DoctorDetail', { doctor });
   };
 
+  // --Función de apertura de filtros--
+  // {{muestra el modal de filtros de búsqueda}}
   const handleFilterPress = () => {
     setShowFilterModal(true);
   };
 
+  // --Función de aplicación de filtros--
+  // {{aplica los filtros seleccionados y cierra el modal}}
   const applyFilters = () => {
     setShowFilterModal(false);
-    // Apply filters logic here
+    // --Lógica de aplicación de filtros--
+    // {{aplica filtros de especialidad y clínica}}
     console.log('Applied filters:', { selectedSpecialty, selectedClinic });
   };
 
+  // --Función de limpieza de filtros--
+  // {{resetea todos los filtros seleccionados}}
   const clearFilters = () => {
     setSelectedSpecialty(null);
     setSelectedClinic(null);
   };
 
-  // Filter doctors based on search query and selected filters
+  // --Función de filtrado de doctores--
+  // {{filtra doctores basado en consulta de búsqueda y filtros seleccionados}}
   const filterDoctors = (doctors) => {
     return doctors.filter(doctor => {
-      // Search query filter
+      // --Filtro de consulta de búsqueda--
+      // {{verifica si el doctor coincide con el texto de búsqueda}}
       const matchesSearch = !searchQuery.trim() || 
         doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         doctor.specialty.toLowerCase().includes(searchQuery.toLowerCase()) ||
         doctor.clinic.toLowerCase().includes(searchQuery.toLowerCase());
 
-      // Specialty filter
+      // --Filtro de especialidad--
+      // {{verifica si el doctor coincide con la especialidad seleccionada}}
       const matchesSpecialty = !selectedSpecialty || 
         doctor.specialty === selectedSpecialty;
 
-      // Clinic filter
+      // --Filtro de clínica--
+      // {{verifica si el doctor coincide con la clínica seleccionada}}
       const matchesClinic = !selectedClinic || 
         doctor.clinic === selectedClinic;
 
@@ -154,9 +192,15 @@ const PatientHome = ({ navigation }) => {
     });
   };
 
+  // --Doctores filtrados cercanos--
+  // {{lista de doctores cercanos después de aplicar filtros}}
   const filteredNearbyDoctors = filterDoctors(nearbyDoctors);
+  // --Doctores filtrados mejor calificados--
+  // {{lista de doctores mejor calificados después de aplicar filtros}}
   const filteredTopRatedDoctors = filterDoctors(topRatedDoctors);
 
+  // --Función de renderizado de tarjeta de doctor--
+  // {{renderiza una tarjeta individual de doctor con información y estilos responsivos}}
   const renderDoctorCard = (doctor) => (
     <TouchableOpacity
       key={doctor.id}
@@ -185,6 +229,8 @@ const PatientHome = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  // --Función de renderizado de sección de doctores--
+  // {{renderiza una sección completa de doctores con título y layout responsivo}}
   const renderDoctorSection = (title, doctors, horizontal = true) => {
     if (doctors.length === 0) return null;
 
@@ -193,6 +239,8 @@ const PatientHome = ({ navigation }) => {
         <Text style={[styles.sectionTitle, { fontSize: getResponsiveFontSize(20, 22, 24) }]}>
           {title}
         </Text>
+        {/* --Renderizado responsivo-- */}
+        {/* {{muestra grid en web y scroll horizontal en móvil}} */}
         {isWeb ? (
           <View style={styles.webGrid}>
             {doctors.map(renderDoctorCard)}
@@ -210,10 +258,13 @@ const PatientHome = ({ navigation }) => {
     );
   };
 
+  // --Return del componente--
+  // {{renderiza la interfaz principal del componente}}
   return (
     <SafeAreaView style={styles.container}>
       <View style={[styles.content, isWeb && webStyles.container]}>
-        {/* Header */}
+        {/* --Header principal-- */}
+        {/* {{encabezado con botón de regreso y título}} */}
         <View style={[styles.header, { paddingHorizontal: getResponsivePadding(20, 40, 60) }]}>
           <View style={styles.headerTop}>
             <TouchableOpacity
@@ -229,20 +280,27 @@ const PatientHome = ({ navigation }) => {
           </View>
         </View>
 
+        {/* --ScrollView principal-- */}
+        {/* {{contenedor scrolleable para todo el contenido}} */}
         <ScrollView 
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Search Section */}
+          {/* --Sección de búsqueda-- */}
+          {/* {{barra de búsqueda con filtros y campo de texto}} */}
           <View style={[styles.searchContainer, { paddingHorizontal: getResponsivePadding(20, 40, 60) }]}>
             <View style={[styles.searchBar, isWeb && styles.webSearchBar]}>
+              {/* --Icono de búsqueda-- */}
+              {/* {{icono de lupa para indicar funcionalidad de búsqueda}} */}
               <Ionicons 
                 name="search" 
                 size={getResponsiveFontSize(20, 22, 24)} 
                 color="#666" 
                 style={styles.searchIcon} 
               />
+              {/* --Campo de entrada de búsqueda-- */}
+              {/* {{input de texto para ingresar consulta de búsqueda}} */}
               <TextInput
                 style={[styles.searchInput, { fontSize: getResponsiveFontSize(16, 17, 18) }]}
                 placeholder="Especialista o Clínica"
@@ -250,6 +308,8 @@ const PatientHome = ({ navigation }) => {
                 onChangeText={setSearchQuery}
                 onSubmitEditing={handleSearch}
               />
+              {/* --Botón de filtros-- */}
+              {/* {{botón para abrir modal de filtros avanzados}} */}
               <TouchableOpacity
                 style={styles.filterButton}
                 onPress={handleFilterPress}
@@ -548,44 +608,62 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  // --Estilo de tarjeta de doctor en web--
+  // {{configuración responsiva para tarjetas en versión web}}
   webDoctorCard: {
     flex: '0 1 350px',
     maxWidth: 400,
     minWidth: 300,
     marginHorizontal: 0,
   },
+  // --Estilo del contenido de la tarjeta de doctor--
+  // {{layout horizontal para imagen e información del doctor}}
   doctorCardContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+  // --Estilo de la imagen del doctor--
+  // {{imagen circular responsiva del doctor}}
   doctorImage: {
     width: getResponsiveSpacing(60, 70, 80),
     height: getResponsiveSpacing(60, 70, 80),
     borderRadius: getResponsiveSpacing(30, 35, 40),
     marginRight: 16,
   },
+  // --Estilo de la información del doctor--
+  // {{contenedor flexible para datos del doctor}}
   doctorInfo: {
     flex: 1,
   },
+  // --Estilo del nombre del doctor--
+  // {{texto en negrita para el nombre del doctor}}
   doctorName: {
     fontWeight: 'bold',
     color: '#1A1A1A',
     marginBottom: 4,
   },
+  // --Estilo de la especialidad del doctor--
+  // {{texto en gris para la especialidad médica}}
   doctorSpecialty: {
     color: '#666',
     marginBottom: 2,
   },
+  // --Estilo de la clínica del doctor--
+  // {{texto azul para el nombre de la clínica}}
   doctorClinic: {
     color: '#007AFF',
     fontWeight: '500',
   },
+  // --Estilo de contenedor sin resultados--
+  // {{contenedor centrado para cuando no hay resultados de búsqueda}}
   noResultsContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: getResponsiveSpacing(60, 80, 100),
     paddingHorizontal: getResponsivePadding(20, 40, 60),
   },
+  // --Estilo del título sin resultados--
+  // {{título en negrita centrado para estado sin resultados}}
   noResultsTitle: {
     fontWeight: 'bold',
     color: '#666',
@@ -593,22 +671,29 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: 'center',
   },
+  // --Estilo del subtítulo sin resultados--
+  // {{subtítulo centrado para estado sin resultados}}
   noResultsSubtitle: {
     color: '#999',
     textAlign: 'center',
   },
-  // Modal Styles
+  // --Estilos de modales--
+  // {{configuración visual para todos los modales del componente}}
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
+  // --Estilo del contenido del modal--
+  // {{contenedor principal del modal con bordes redondeados}}
   modalContent: {
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '80%',
   },
+  // --Estilo del header del modal--
+  // {{encabezado horizontal con título y botón de cerrar}}
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -617,29 +702,43 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
+  // --Estilo del título del modal--
+  // {{título en negrita para el encabezado del modal}}
   modalTitle: {
     fontWeight: 'bold',
     color: '#1A1A1A',
   },
+  // --Estilo del botón de cerrar--
+  // {{botón con padding para cerrar el modal}}
   closeButton: {
     padding: 4,
   },
+  // --Estilo del cuerpo del modal--
+  // {{contenido principal del modal con padding}}
   modalBody: {
     padding: 20,
   },
+  // --Estilo de sección de filtro--
+  // {{contenedor para cada grupo de filtros}}
   filterSection: {
     marginBottom: 24,
   },
+  // --Estilo del título de sección de filtro--
+  // {{título en negrita para cada grupo de filtros}}
   filterSectionTitle: {
     fontWeight: '600',
     color: '#1A1A1A',
     marginBottom: 12,
   },
+  // --Estilo de opciones de filtro--
+  // {{contenedor flexible para opciones de filtro}}
   filterOptions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
+  // --Estilo de opción de filtro--
+  // {{botón individual para cada opción de filtro}}
   filterOption: {
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -648,17 +747,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E0E0E0',
   },
+  // --Estilo de opción de filtro seleccionada--
+  // {{estado visual para opción de filtro activa}}
   filterOptionSelected: {
     backgroundColor: '#007AFF',
     borderColor: '#007AFF',
   },
+  // --Estilo del texto de opción de filtro--
+  // {{texto en gris para opciones de filtro normales}}
   filterOptionText: {
     color: '#666',
     fontWeight: '500',
   },
+  // --Estilo del texto de opción de filtro seleccionada--
+  // {{texto blanco para opciones de filtro activas}}
   filterOptionTextSelected: {
     color: '#FFFFFF',
   },
+  // --Estilo del footer del modal--
+  // {{pie del modal con botones y borde superior}}
   modalFooter: {
     flexDirection: 'row',
     padding: 20,
@@ -666,22 +773,32 @@ const styles = StyleSheet.create({
     borderTopColor: '#E0E0E0',
     gap: 12,
   },
+  // --Estilo base de botones del modal--
+  // {{configuración común para botones de modal}}
   modalButton: {
     flex: 1,
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
   },
+  // --Estilo del botón de limpiar--
+  // {{botón gris para limpiar filtros}}
   clearButton: {
     backgroundColor: '#F0F0F0',
   },
+  // --Estilo del botón de aplicar--
+  // {{botón azul para confirmar filtros}}
   applyButton: {
     backgroundColor: '#007AFF',
   },
+  // --Estilo del texto del botón limpiar--
+  // {{texto gris en negrita para botón limpiar}}
   clearButtonText: {
     color: '#666',
     fontWeight: '600',
   },
+  // --Estilo del texto del botón aplicar--
+  // {{texto blanco en negrita para botón aplicar}}
   applyButtonText: {
     color: '#FFFFFF',
     fontWeight: '600',

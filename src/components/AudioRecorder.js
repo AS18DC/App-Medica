@@ -1,17 +1,47 @@
+// --Imports de React Native--
+// Importa las funcionalidades básicas de React y React Native
 import React, { useState, useRef, useEffect } from 'react';
 import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
+
+// --Imports de Expo--
+// Importa la API de audio de Expo para grabación y reproducción
 import { Audio } from 'expo-av';
+
+// --Imports de iconos--
+// Importa iconos de Ionicons para la interfaz de usuario
 import { Ionicons } from '@expo/vector-icons';
 
 const AudioRecorder = ({ onSend, onCancel }) => {
+  // --Estado de grabación--
+  // Controla el objeto de grabación actual
   const [recording, setRecording] = useState(null);
+  
+  // --Indicador de grabación activa--
+  // Indica si se está grabando audio actualmente
   const [isRecording, setIsRecording] = useState(false);
+  
+  // --Indicador de pausa--
+  // Indica si la grabación está pausada
   const [isPaused, setIsPaused] = useState(false);
+  
+  // --URI del audio--
+  // Almacena la ruta del archivo de audio grabado
   const [audioUri, setAudioUri] = useState(null);
+  
+  // --Objeto de sonido--
+  // Controla la reproducción del audio
   const [sound, setSound] = useState(null);
+  
+  // --Indicador de reproducción--
+  // Indica si se está reproduciendo audio
   const [isPlaying, setIsPlaying] = useState(false);
+  
+  // --Duración en milisegundos--
+  // Almacena la duración total de la grabación
   const [durationMillis, setDurationMillis] = useState(0);
 
+  // --Iniciar grabación--
+  // Comienza a grabar audio con permisos y configuración
   const startRecording = async () => {
     try {
       await Audio.requestPermissionsAsync();
@@ -28,6 +58,8 @@ const AudioRecorder = ({ onSend, onCancel }) => {
     }
   };
 
+  // --Detener grabación--
+  // Finaliza la grabación y envía el audio automáticamente
   const stopRecording = async () => {
     setIsRecording(false);
     setIsPaused(false);
@@ -40,6 +72,8 @@ const AudioRecorder = ({ onSend, onCancel }) => {
     }
   };
 
+  // --Reproducir audio--
+  // Reproduce el audio grabado con controles de estado
   const playAudio = async () => {
     if (!audioUri) return;
     const { sound } = await Audio.Sound.createAsync({ uri: audioUri });
@@ -54,6 +88,8 @@ const AudioRecorder = ({ onSend, onCancel }) => {
     await sound.playAsync();
   };
 
+  // --Pausar grabación--
+  // Pausa la grabación actual
   const pauseRecording = async () => {
     if (recording) {
       await recording.pauseAsync();
@@ -61,6 +97,8 @@ const AudioRecorder = ({ onSend, onCancel }) => {
     }
   };
 
+  // --Reanudar grabación--
+  // Continúa la grabación desde donde se pausó
   const resumeRecording = async () => {
     if (recording) {
       await recording.startAsync();
@@ -68,6 +106,8 @@ const AudioRecorder = ({ onSend, onCancel }) => {
     }
   };
 
+  // --Eliminar grabación--
+  // Cancela y elimina la grabación actual
   const deleteRecording = async () => {
     if (recording) {
       await recording.stopAndUnloadAsync();
@@ -79,6 +119,8 @@ const AudioRecorder = ({ onSend, onCancel }) => {
     setDurationMillis(0);
   };
 
+  // --Efecto de duración--
+  // Actualiza la duración de la grabación en tiempo real
   useEffect(() => {
     let interval;
     if (isRecording && recording && !isPaused) {
@@ -92,6 +134,8 @@ const AudioRecorder = ({ onSend, onCancel }) => {
     return () => clearInterval(interval);
   }, [isRecording, isPaused, recording]);
 
+  // --Formatear tiempo--
+  // Convierte milisegundos a formato MM:SS
   const formatTime = (millis) => {
     const totalSeconds = Math.floor(millis / 1000);
     const minutes = Math.floor(totalSeconds / 60);
@@ -99,6 +143,8 @@ const AudioRecorder = ({ onSend, onCancel }) => {
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
+  // --Enviar audio--
+  // Envía el audio grabado y limpia el estado
   const sendAudio = () => {
     if (audioUri && onSend) {
       onSend(audioUri);
@@ -106,7 +152,8 @@ const AudioRecorder = ({ onSend, onCancel }) => {
     }
   };
 
-  // Permitir cancelar desde el menú
+  // --Manejar cancelación--
+  // Permite cancelar la grabación desde el menú
   const handleCancel = () => {
     if (typeof onCancel === 'function') {
       onCancel();
@@ -114,7 +161,8 @@ const AudioRecorder = ({ onSend, onCancel }) => {
     deleteRecording();
   };
 
-  // Iniciar grabación automáticamente al montar
+  // --Efecto de inicio automático--
+  // Inicia la grabación automáticamente al montar el componente
   useEffect(() => {
     if (!isRecording && !audioUri) {
       startRecording();
@@ -155,6 +203,8 @@ const AudioRecorder = ({ onSend, onCancel }) => {
 };
 
 const styles = StyleSheet.create({
+  // --Contenedor del menú--
+  // Contenedor principal del menú de grabación con diseño horizontal
   menuContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -166,6 +216,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginVertical: 4,
   },
+  
+  // --Duración del audio--
+  // Estilo para mostrar el tiempo de grabación
   duration: {
     color: '#333',
     fontSize: 16,
@@ -173,30 +226,48 @@ const styles = StyleSheet.create({
     marginRight: 12,
     minWidth: 40,
   },
+  
+  // --Botones del menú--
+  // Contenedor de los botones de control de grabación
   menuButtons: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
+  
+  // --Botón de icono del menú--
+  // Estilo para cada botón individual del menú
   menuIconButton: {
     padding: 4,
     marginHorizontal: 2,
   },
+  
+  // --Contenedor principal--
+  // Contenedor principal del componente con diseño horizontal
   container: {
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 8,
   },
+  
+  // --Botón de grabación--
+  // Estilo para el botón de iniciar grabación
   recordButton: {
     padding: 10,
     backgroundColor: '#F0F0F0',
     borderRadius: 24,
   },
+  
+  // --Botón de parar--
+  // Estilo para el botón de detener grabación
   stopButton: {
     padding: 10,
     backgroundColor: '#FFEBEE',
     borderRadius: 24,
   },
+  
+  // --Vista previa de audio--
+  // Contenedor para mostrar la vista previa del audio grabado
   audioPreview: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -205,14 +276,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
+  
+  // --Botón de reproducir--
+  // Estilo para el botón de reproducir audio
   playButton: {
     padding: 6,
   },
+  
+  // --Texto del audio--
+  // Estilo para el texto descriptivo del audio
   audioText: {
     marginHorizontal: 8,
     color: '#333',
     fontSize: 14,
   },
+  
+  // --Botón de enviar--
+  // Estilo para el botón de enviar audio
   sendButton: {
     padding: 6,
   },

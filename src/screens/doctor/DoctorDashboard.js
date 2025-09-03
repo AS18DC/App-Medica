@@ -1,4 +1,9 @@
+// --Imports de React--
+// Importa las funcionalidades básicas de React y hooks de estado
 import React, { useState } from 'react';
+
+// --Imports de React Native--
+// Importa componentes básicos de React Native para la interfaz
 import {
   View,
   Text,
@@ -11,18 +16,42 @@ import {
   Modal,
   TextInput,
 } from 'react-native';
+
+// --Imports de iconos--
+// Importa iconos de Ionicons para la interfaz de usuario
 import { Ionicons } from '@expo/vector-icons';
+
+// --Imports de utilidades responsivas--
+// Importa funciones para hacer la interfaz responsiva en diferentes dispositivos
 import { isWeb, webStyles, getResponsiveSpacing, getResponsiveFontSize, getResponsivePadding } from '../../utils/responsive';
+
+// --Imports de contexto--
+// Importa el contexto del doctor para acceder a datos y funciones
 import { useDoctor } from '../../context/DoctorContext';
 
 const DoctorDashboard = ({ navigation }) => {
+  // --Estado del modal de paciente--
+  // Controla la visibilidad del modal que muestra detalles del paciente
   const [showPatientModal, setShowPatientModal] = useState(false);
+  
+  // --Estado de paciente seleccionado--
+  // Almacena el paciente seleccionado para mostrar en el modal
   const [selectedPatient, setSelectedPatient] = useState(null);
+  
+  // --Estado del modal de rechazo--
+  // Controla la visibilidad del modal para rechazar solicitudes
   const [showRejectModal, setShowRejectModal] = useState(false);
+  
+  // --Estado de solicitud seleccionada--
+  // Almacena la solicitud seleccionada para rechazar
   const [selectedRequest, setSelectedRequest] = useState(null);
+  
+  // --Estado de razón de rechazo--
+  // Almacena la razón ingresada para rechazar una solicitud
   const [rejectReason, setRejectReason] = useState('');
   
-    // Use shared context
+  // --Contexto del doctor--
+  // Obtiene datos y funciones del contexto del doctor
   const {
     patients,
     pendingRequests,
@@ -36,17 +65,16 @@ const DoctorDashboard = ({ navigation }) => {
     updateAvailability,
   } = useDoctor();
 
-
-
-  // Mock data for statistics
+  // --Estadísticas--
+  // Datos simulados para las estadísticas del dashboard
   const stats = {
     appointments: 12,
     requests: pendingRequests.length,
     patients: patients.length,
   };
 
-
-
+  // --Función de aceptar solicitud--
+  // Maneja la aceptación de una solicitud de paciente
   const handleAcceptRequest = (request) => {
     Alert.alert(
       'Aceptar solicitud',
@@ -56,10 +84,10 @@ const DoctorDashboard = ({ navigation }) => {
         { 
           text: 'Aceptar', 
           onPress: () => {
-            // Remove from pending requests
+            // Remover de solicitudes pendientes
             removePendingRequest(request.id);
             
-            // Add to patients list
+            // Agregar a la lista de pacientes
             const newPatient = {
               name: request.patientName,
               image: request.patientImage,
@@ -74,7 +102,7 @@ const DoctorDashboard = ({ navigation }) => {
             };
             addPatient(newPatient);
             
-            // Add to upcoming appointments
+            // Agregar a próximas citas
             const newAppointment = {
               patientName: request.patientName,
               patientImage: request.patientImage,
@@ -89,15 +117,15 @@ const DoctorDashboard = ({ navigation }) => {
             };
             addUpcomingAppointment(newAppointment);
             
-            // Add appointment to calendar
+            // Agregar cita al calendario
             const appointmentDate = new Date();
             if (request.date.includes('Mañana')) {
               appointmentDate.setDate(appointmentDate.getDate() + 1);
             }
-            // Use the same date key format as in DoctorContext
+            // Usar el mismo formato de clave de fecha que en DoctorContext
             const dateKey = `${appointmentDate.getFullYear()}-${appointmentDate.getMonth()}-${appointmentDate.getDate()}`;
             
-            // Get current appointments for this date
+            // Obtener citas actuales para esta fecha
             const currentAppointments = appointments[dateKey] || [];
             const newCalendarAppointment = {
               id: Date.now(),
@@ -109,10 +137,10 @@ const DoctorDashboard = ({ navigation }) => {
               }
             };
             
-            // Update calendar appointments
+            // Actualizar citas del calendario
             updateAppointments(dateKey, [...currentAppointments, newCalendarAppointment]);
             
-            // Update availability - remove the time slot that was booked
+            // Actualizar disponibilidad - remover el horario que fue reservado
             const currentAvailability = availability[dateKey] || [];
             const appointmentTime = (request.date.split(' ')[1] + ' ' + request.date.split(' ')[2]) || '10:00 AM';
             const updatedAvailability = currentAvailability.filter(slot => slot.time !== appointmentTime);
@@ -125,22 +153,26 @@ const DoctorDashboard = ({ navigation }) => {
     );
   };
 
+  // --Función de rechazar solicitud--
+  // Maneja el rechazo de una solicitud de paciente
   const handleDeclineRequest = (request) => {
     setSelectedRequest(request);
     setRejectReason('');
     setShowRejectModal(true);
   };
 
+  // --Función de confirmar rechazo--
+  // Confirma el rechazo de una solicitud con la razón proporcionada
   const handleConfirmReject = () => {
     if (!rejectReason.trim()) {
       Alert.alert('Error', 'Por favor proporciona una razón para rechazar la solicitud');
       return;
     }
 
-    // Remove from pending requests
+    // Remover de solicitudes pendientes
     removePendingRequest(selectedRequest.id);
     
-    // Here you would typically send the rejection reason to the backend
+    // Aquí típicamente enviarías la razón de rechazo al backend
     console.log(`Solicitud rechazada para ${selectedRequest.patientName}. Razón: ${rejectReason}`);
     
     setShowRejectModal(false);
@@ -150,6 +182,8 @@ const DoctorDashboard = ({ navigation }) => {
     Alert.alert('Solicitud rechazada', `La solicitud de ${selectedRequest.patientName} ha sido rechazada`);
   };
 
+  // --Función de chat con paciente--
+  // Navega al chat con un paciente específico
   const handleChatWithPatient = (appointment) => {
     navigation.navigate('DoctorChat', {
       patient: { name: appointment.patientName },
@@ -157,11 +191,15 @@ const DoctorDashboard = ({ navigation }) => {
     });
   };
 
+  // --Función de presión de paciente--
+  // Maneja la selección de un paciente para mostrar sus detalles
   const handlePatientPress = (patient) => {
     setSelectedPatient(patient);
     setShowPatientModal(true);
   };
 
+  // --Función de renderizado de tarjeta de estadística--
+  // Renderiza cada tarjeta individual de estadística
   const renderStatCard = (title, value, icon, color) => (
     <View style={[styles.statCard, isWeb && styles.webStatCard]}>
       <View style={[styles.statIcon, { backgroundColor: color }]}>
@@ -178,6 +216,8 @@ const DoctorDashboard = ({ navigation }) => {
     </View>
   );
 
+  // --Función de renderizado de próxima cita--
+  // Renderiza cada tarjeta individual de próxima cita
   const renderUpcomingAppointment = (appointment) => (
     <TouchableOpacity
       key={appointment.id}
@@ -215,6 +255,8 @@ const DoctorDashboard = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  // --Función de renderizado de solicitud pendiente--
+  // Renderiza cada tarjeta individual de solicitud pendiente
   const renderPendingRequest = (request) => (
     <View key={request.id} style={[styles.requestCard, isWeb && styles.webRequestCard]}>
       <TouchableOpacity
@@ -370,7 +412,7 @@ const DoctorDashboard = ({ navigation }) => {
                     <Text style={[styles.consultationsTitle, { fontSize: getResponsiveFontSize(18, 20, 22) }]}>
                       Historial de Consultas
                     </Text>
-                                        {selectedPatient.consultations && selectedPatient.consultations.map((consultation, index) => (
+                    {selectedPatient.consultations && selectedPatient.consultations.map((consultation, index) => (
                       <View key={consultation.id} style={styles.consultationCard}>
                         <View style={styles.consultationHeader}>
                           <Text style={[styles.consultationDate, { fontSize: getResponsiveFontSize(16, 17, 18) }]}>
@@ -475,55 +517,95 @@ const DoctorDashboard = ({ navigation }) => {
   );
 };
 
+// --Estilos del componente--
+// Define todos los estilos visuales del dashboard del doctor
 const styles = StyleSheet.create({
+  // --Contenedor principal--
+  // Estilo del contenedor principal de la pantalla
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
+  
+  // --Contenido--
+  // Estilo del contenido principal de la pantalla
   content: {
     flex: 1,
   },
+  
+  // --Encabezado--
+  // Estilo del encabezado de la pantalla
   header: {
     paddingTop: getResponsiveSpacing(20, 30, 40),
     paddingBottom: getResponsiveSpacing(16, 20, 24),
   },
+  
+  // --Parte superior del encabezado--
+  // Estilo de la parte superior del encabezado
   headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  
+  // --Botón de regreso--
+  // Estilo del botón para regresar a la pantalla anterior
   backButton: {
     padding: 8,
   },
+  
+  // --Título principal--
+  // Estilo del título principal de la pantalla
   title: {
     fontWeight: 'bold',
     color: '#1A1A1A',
     flex: 1,
     textAlign: 'center',
   },
+  
+  // --Parte derecha del encabezado--
+  // Estilo de la parte derecha del encabezado
   headerRight: {
     width: 40,
   },
+  
+  // --Vista de desplazamiento--
+  // Estilo de la vista de desplazamiento principal
   scrollView: {
     flex: 1,
   },
+  
+  // --Contenido del desplazamiento--
+  // Estilo del contenido dentro de la vista de desplazamiento
   scrollContent: {
     paddingBottom: getResponsiveSpacing(20, 30, 40),
   },
+  
+  // --Contenedor de estadísticas--
+  // Estilo del contenedor que muestra las estadísticas principales
   statsContainer: {
     marginBottom: getResponsiveSpacing(24, 32, 40),
   },
+  
+  // --Cuadrícula de estadísticas--
+  // Estilo de la cuadrícula de estadísticas en dispositivos móviles
   statsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 12,
   },
+  
+  // --Cuadrícula de estadísticas web--
+  // Estilo de la cuadrícula de estadísticas en dispositivos web
   webStatsGrid: {
     display: 'flex',
     flexDirection: 'row',
     justifyContent: 'center',
     gap: getResponsiveSpacing(16, 24, 32),
   },
+  
+  // --Tarjeta de estadística--
+  // Estilo de cada tarjeta individual de estadística
   statCard: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -540,11 +622,17 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
+  
+  // --Tarjeta de estadística web--
+  // Estilo específico para las tarjetas de estadística en dispositivos web
   webStatCard: {
     flex: '0 1 150px',
     maxWidth: 180,
     minWidth: 120,
   },
+  
+  // --Icono de estadística--
+  // Estilo del icono en cada tarjeta de estadística
   statIcon: {
     width: getResponsiveSpacing(32, 36, 40),
     height: getResponsiveSpacing(32, 36, 40),
@@ -553,31 +641,55 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 8,
   },
+  
+  // --Contenido de estadística--
+  // Estilo del contenedor de texto en cada tarjeta de estadística
   statContent: {
     flex: 1,
   },
+  
+  // --Valor de estadística--
+  // Estilo del número principal en cada tarjeta de estadística
   statValue: {
     fontWeight: 'bold',
     color: '#1A1A1A',
     marginBottom: 4,
   },
+  
+  // --Título de estadística--
+  // Estilo de la etiqueta descriptiva en cada tarjeta de estadística
   statTitle: {
     color: '#666',
   },
+  
+  // --Sección--
+  // Estilo base para cada sección del dashboard
   section: {
     marginBottom: getResponsiveSpacing(24, 32, 40),
   },
+  
+  // --Título de sección--
+  // Estilo del título de cada sección
   sectionTitle: {
     fontWeight: 'bold',
     color: '#1A1A1A',
     marginBottom: 16,
   },
+  
+  // --Lista de citas--
+  // Estilo del contenedor de la lista de citas
   appointmentsList: {
     gap: getResponsiveSpacing(12, 16, 20),
   },
+  
+  // --Lista de solicitudes--
+  // Estilo del contenedor de la lista de solicitudes
   requestsList: {
     gap: getResponsiveSpacing(12, 16, 20),
   },
+  
+  // --Tarjeta de cita--
+  // Estilo de cada tarjeta individual de cita
   appointmentCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -591,11 +703,17 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  
+  // --Tarjeta de cita web--
+  // Estilo específico para las tarjetas de cita en dispositivos web
   webAppointmentCard: {
     maxWidth: 600,
     alignSelf: 'center',
     width: '100%',
   },
+  
+  // --Tarjeta de solicitud--
+  // Estilo de cada tarjeta individual de solicitud
   requestCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -609,72 +727,123 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  
+  // --Tarjeta de solicitud web--
+  // Estilo específico para las tarjetas de solicitud en dispositivos web
   webRequestCard: {
     maxWidth: 600,
     alignSelf: 'center',
     width: '100%',
   },
+  
+  // --Encabezado de cita--
+  // Estilo del encabezado de cada tarjeta de cita
   appointmentHeader: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+  
+  // --Encabezado de solicitud--
+  // Estilo del encabezado de cada tarjeta de solicitud
   requestHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
   },
+  
+  // --Contenedor de imagen del paciente--
+  // Estilo del contenedor de la imagen del paciente
   patientImageContainer: {
     marginRight: 12,
   },
+  
+  // --Imagen del paciente--
+  // Estilo de la imagen del paciente
   patientImage: {
     width: getResponsiveSpacing(40, 45, 50),
     height: getResponsiveSpacing(40, 45, 50),
     borderRadius: getResponsiveSpacing(20, 22, 25),
   },
+  
+  // --Información de la cita--
+  // Estilo del contenedor de información de la cita
   appointmentInfo: {
     flex: 1,
   },
+  
+  // --Información de la solicitud--
+  // Estilo del contenedor de información de la solicitud
   requestInfo: {
     flex: 1,
   },
+  
+  // --Nombre del paciente--
+  // Estilo del nombre del paciente
   patientName: {
     fontWeight: 'bold',
     color: '#1A1A1A',
     marginBottom: 2,
   },
+  
+  // --Tipo de cita--
+  // Estilo del tipo de cita
   appointmentType: {
     color: '#666',
     marginBottom: 2,
   },
+  
+  // --Hora de la cita--
+  // Estilo de la hora de la cita
   appointmentTime: {
     color: '#007AFF',
     fontWeight: '500',
     marginBottom: 2,
   },
+  
+  // --Nombre de la clínica--
+  // Estilo del nombre de la clínica
   clinicName: {
     color: '#999',
   },
+  
+  // --Botón de chat--
+  // Estilo del botón para iniciar chat con el paciente
   chatButton: {
     padding: 8,
   },
+  
+  // --Detalles de la solicitud--
+  // Estilo del contenedor de detalles de la solicitud
   requestDetails: {
     marginBottom: 16,
   },
+  
+  // --Etiqueta de razón--
+  // Estilo de la etiqueta que describe el motivo de consulta
   reasonLabel: {
     fontWeight: '600',
     color: '#1A1A1A',
     marginBottom: 4,
   },
+  
+  // --Texto de razón--
+  // Estilo del texto que describe el motivo de consulta
   reasonText: {
     color: '#666',
     lineHeight: 20,
     marginBottom: 8,
   },
+  
+  // --Acciones de la solicitud--
+  // Estilo del contenedor de botones de acción para cada solicitud
   requestActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 12,
   },
+  
+  // --Botón de rechazar--
+  // Estilo del botón para rechazar una solicitud
   declineButton: {
     flex: 1,
     backgroundColor: '#FF3B30',
@@ -682,6 +851,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
   },
+  
+  // --Botón de aceptar--
+  // Estilo del botón para aceptar una solicitud
   acceptButton: {
     flex: 1,
     backgroundColor: '#34C759',
@@ -689,26 +861,43 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
   },
+  
+  // --Texto del botón de rechazar--
+  // Estilo del texto del botón de rechazar
   declineButtonText: {
     color: '#FFFFFF',
     fontWeight: '600',
   },
+  
+  // --Texto del botón de aceptar--
+  // Estilo del texto del botón de aceptar
   acceptButtonText: {
     color: '#FFFFFF',
     fontWeight: '600',
   },
-  // Modal Styles
+  
+  // --Estilos del modal--
+  // Estilos para los modales de detalles del paciente y rechazo
+  
+  // --Superposición del modal--
+  // Estilo de la superposición oscura del modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
+  
+  // --Contenido del modal--
+  // Estilo del contenido principal del modal
   modalContent: {
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '90%',
   },
+  
+  // --Encabezado del modal--
+  // Estilo del encabezado del modal
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -717,39 +906,66 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
+  
+  // --Título del modal--
+  // Estilo del título del modal
   modalTitle: {
     fontWeight: 'bold',
     color: '#1A1A1A',
   },
+  
+  // --Botón de cerrar--
+  // Estilo del botón para cerrar el modal
   closeButton: {
     padding: 4,
   },
+  
+  // --Cuerpo del modal--
+  // Estilo del cuerpo principal del modal
   modalBody: {
     padding: 20,
   },
+  
+  // --Información del paciente--
+  // Estilo del contenedor de información básica del paciente
   patientInfo: {
     marginBottom: 24,
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
+  
+  // --Título de información del paciente--
+  // Estilo del título de la información del paciente
   patientInfoTitle: {
     fontWeight: 'bold',
     color: '#1A1A1A',
     marginBottom: 8,
   },
+  
+  // --Texto de información del paciente--
+  // Estilo del texto de la información del paciente
   patientInfoText: {
     color: '#666',
     marginBottom: 4,
   },
+  
+  // --Sección de consultas--
+  // Estilo del contenedor de la sección de consultas
   consultationsSection: {
     gap: 16,
   },
+  
+  // --Título de consultas--
+  // Estilo del título de la sección de consultas
   consultationsTitle: {
     fontWeight: 'bold',
     color: '#1A1A1A',
     marginBottom: 12,
   },
+  
+  // --Tarjeta de consulta--
+  // Estilo de cada tarjeta individual de consulta
   consultationCard: {
     backgroundColor: '#F8F9FA',
     borderRadius: 12,
@@ -757,48 +973,80 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: '#007AFF',
   },
+  
+  // --Encabezado de consulta--
+  // Estilo del encabezado de cada tarjeta de consulta
   consultationHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
   },
+  
+  // --Fecha de consulta--
+  // Estilo de la fecha de la consulta
   consultationDate: {
     fontWeight: '600',
     color: '#1A1A1A',
   },
+  
+  // --Insignia de estado--
+  // Estilo de la insignia que muestra el estado de la consulta
   statusBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
+  
+  // --Estado completado--
+  // Estilo para consultas completadas
   statusCompleted: {
     backgroundColor: '#34C759',
   },
+  
+  // --Estado pendiente--
+  // Estilo para consultas pendientes
   statusPending: {
     backgroundColor: '#FF9500',
   },
+  
+  // --Texto del estado--
+  // Estilo del texto que indica el estado de la consulta
   statusText: {
     color: '#FFFFFF',
     fontWeight: '600',
   },
+  
+  // --Etiqueta de consulta--
+  // Estilo de la etiqueta descriptiva en cada consulta
   consultationLabel: {
     fontWeight: '600',
     color: '#1A1A1A',
     marginBottom: 4,
     marginTop: 8,
   },
+  
+  // --Texto de consulta--
+  // Estilo del texto descriptivo de cada consulta
   consultationText: {
     color: '#666',
     lineHeight: 20,
     marginBottom: 8,
   },
-  // Reject Reason Modal Styles
+  
+  // --Estilos del modal de razón de rechazo--
+  // Estilos específicos para el modal de rechazo
+  
+  // --Texto del modal--
+  // Estilo del texto explicativo del modal de rechazo
   modalText: {
     color: '#333',
     marginBottom: 16,
     textAlign: 'center',
   },
+  
+  // --Campo de entrada de razón--
+  // Estilo del campo de texto para ingresar la razón de rechazo
   rejectReasonInput: {
     borderWidth: 1,
     borderColor: '#E0E0E0',
@@ -808,6 +1056,9 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     fontSize: getResponsiveFontSize(14, 15, 16),
   },
+  
+  // --Pie del modal--
+  // Estilo del pie del modal con botones de acción
   modalFooter: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -815,6 +1066,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
   },
+  
+  // --Botón de confirmar rechazo--
+  // Estilo del botón para confirmar el rechazo
   confirmRejectButton: {
     flex: 1,
     backgroundColor: '#FF3B30',
@@ -823,10 +1077,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 10,
   },
+  
+  // --Texto del botón de confirmar rechazo--
+  // Estilo del texto del botón de confirmar rechazo
   confirmRejectButtonText: {
     color: '#FFFFFF',
     fontWeight: '600',
   },
+  
+  // --Botón de cancelar rechazo--
+  // Estilo del botón para cancelar el rechazo
   cancelRejectButton: {
     flex: 1,
     backgroundColor: '#E0E0E0',
@@ -834,6 +1094,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
   },
+  
+  // --Texto del botón de cancelar rechazo--
+  // Estilo del texto del botón de cancelar rechazo
   cancelRejectButtonText: {
     color: '#333',
     fontWeight: '600',

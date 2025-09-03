@@ -1,4 +1,9 @@
-import React, { useState } from 'react';
+// --Imports de React--
+// Importa las funcionalidades básicas de React y hooks de estado y efectos
+import React, { useState, useEffect } from 'react';
+
+// --Imports de React Native--
+// Importa componentes básicos de React Native para la interfaz
 import {
   View,
   Text,
@@ -7,842 +12,633 @@ import {
   TouchableOpacity,
   SafeAreaView,
   TextInput,
+  FlatList,
   Image,
   Alert,
   Modal,
 } from 'react-native';
+
+// --Imports de iconos--
+// Importa iconos de Ionicons para la interfaz de usuario
 import { Ionicons } from '@expo/vector-icons';
+
+// --Imports de utilidades responsivas--
+// Importa funciones para hacer la interfaz responsiva en diferentes dispositivos
 import { isWeb, webStyles, getResponsiveSpacing, getResponsiveFontSize, getResponsivePadding } from '../../utils/responsive';
-import { usePrescriptions } from '../../context/PrescriptionContext';
+
+// --Imports de contexto--
+// Importa el contexto del doctor para acceder a pacientes y funciones relacionadas
 import { useDoctor } from '../../context/DoctorContext';
 
 const DoctorPatients = ({ navigation }) => {
+  // --Estado de búsqueda--
+  // Texto de búsqueda para filtrar pacientes
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // --Estado de filtro seleccionado--
+  // Filtro activo para categorizar pacientes
+  const [selectedFilter, setSelectedFilter] = useState('all');
+  
+  // --Estado de modal de paciente--
+  // Controla la visibilidad del modal de detalles del paciente
   const [showPatientModal, setShowPatientModal] = useState(false);
+  
+  // --Estado de paciente seleccionado--
+  // Paciente actualmente seleccionado para mostrar en el modal
   const [selectedPatient, setSelectedPatient] = useState(null);
-  const [showNewPrescriptionModal, setShowNewPrescriptionModal] = useState(false);
-  const [showEditPrescriptionModal, setShowEditPrescriptionModal] = useState(false);
-  const [selectedPrescription, setSelectedPrescription] = useState(null);
-  const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  
+  // --Estado de modal de eliminación--
+  // Controla la visibilidad del modal de confirmación de eliminación
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  
+  // --Estado de paciente a eliminar--
+  // Paciente que será eliminado después de confirmación
+  const [patientToDelete, setPatientToDelete] = useState(null);
+  
+  // --Contexto del doctor--
+  // Obtiene la lista de pacientes y funciones del contexto del doctor
+  const { patients, removePatient } = useDoctor();
 
-  // Form state for new/edit prescription
-  const [prescriptionForm, setPrescriptionForm] = useState({
-    patientName: '',
-    medication: '',
-    dosage: '',
-    frequency: '',
-    duration: '',
-    instructions: '',
-    diagnosis: '',
+  // --Filtros disponibles--
+  // Lista de filtros para categorizar pacientes
+  const filters = [
+    { id: 'all', label: 'Todos', icon: 'people' },
+    { id: 'active', label: 'Activos', icon: 'checkmark-circle' },
+    { id: 'inactive', label: 'Inactivos', icon: 'close-circle' },
+    { id: 'recent', label: 'Recientes', icon: 'time' },
+  ];
+
+  // --Pacientes filtrados--
+  // Lista de pacientes filtrada según la búsqueda y filtro seleccionado
+  const filteredPatients = patients.filter(patient => {
+    const matchesSearch = patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         patient.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         patient.phone.includes(searchQuery);
+    
+    let matchesFilter = true;
+    switch (selectedFilter) {
+      case 'active':
+        matchesFilter = patient.status === 'active';
+        break;
+      case 'inactive':
+        matchesFilter = patient.status === 'inactive';
+        break;
+      case 'recent':
+        // Pacientes agregados en los últimos 30 días
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        matchesFilter = new Date(patient.addedDate) >= thirtyDaysAgo;
+        break;
+    }
+    
+    return matchesSearch && matchesFilter;
   });
 
-  // Use shared prescription context
-  const { prescriptions, addPrescription, updatePrescription, deletePrescription, getPrescriptionsByPatient } = usePrescriptions();
-
-    // Use shared doctor context
-  const { patients, updatePatient } = useDoctor();
-
-  const filteredPatients = patients.filter(patient =>
-    patient.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const handleChatPress = (patient) => {
-    navigation.navigate('DoctorChat', { 
-      patient: { name: patient.name },
-      appointment: { date: patient.nextAppointment }
-    });
+  // --Función de selección de filtro--
+  // Cambia el filtro activo para la lista de pacientes
+  const handleFilterSelect = (filterId) => {
+    setSelectedFilter(filterId);
   };
 
-  const handlePrescriptionPress = (patient) => {
-    navigation.navigate('DoctorPrescriptions', { 
-      patient: patient,
-      mode: 'new'
-    });
+  // --Función de búsqueda--
+  // Actualiza el texto de búsqueda para filtrar pacientes
+  const handleSearch = (text) => {
+    setSearchQuery(text);
   };
 
-  const handleViewPrescriptions = (patient) => {
-    // Filter prescriptions for this patient using context
-    const patientPrescriptions = getPrescriptionsByPatient(patient.name);
-    if (patientPrescriptions.length > 0) {
-      // Show all prescriptions for this patient
-      setSelectedPrescription(patientPrescriptions[0]); // Set first one as default
-      setShowPrescriptionModal(true);
-    } else {
-      Alert.alert('Sin recetas', `${patient.name} no tiene recetas registradas`);
-    }
-  };
-
-  const handleNewPrescription = (patient) => {
-    setPrescriptionForm({
-      patientName: patient.name,
-      medication: '',
-      dosage: '',
-      frequency: '',
-      duration: '',
-      instructions: '',
-      diagnosis: '',
-    });
-    setIsEditing(false);
-    setShowNewPrescriptionModal(true);
-  };
-
-  const handleEditPrescription = (prescription) => {
-    setPrescriptionForm({
-      patientName: prescription.patientName,
-      medication: prescription.medication,
-      dosage: prescription.dosage,
-      frequency: prescription.frequency,
-      duration: prescription.duration,
-      instructions: prescription.instructions,
-      diagnosis: prescription.diagnosis,
-    });
-    setIsEditing(true);
-    setSelectedPrescription(prescription);
-    setShowEditPrescriptionModal(true);
-  };
-
-  const handleSavePrescription = () => {
-    if (!prescriptionForm.patientName || !prescriptionForm.medication) {
-      Alert.alert('Error', 'Por favor completa los campos obligatorios');
-      return;
-    }
-
-    if (isEditing) {
-      // Update existing prescription
-      const updatedPrescription = {
-        ...prescriptionForm,
-        date: new Date().toLocaleDateString('es-ES'),
-      };
-      updatePrescription(selectedPrescription.id, updatedPrescription);
-      Alert.alert('Éxito', 'Receta actualizada correctamente');
-    } else {
-      // Add new prescription
-      const newPrescription = {
-        id: Date.now(),
-        patientName: prescriptionForm.patientName,
-        patientImage: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-        ...prescriptionForm,
-        date: new Date().toLocaleDateString('es-ES'),
-        status: 'Activa',
-      };
-      addPrescription(newPrescription);
-      
-      // Update patient's hasPrescription status
-      const patientToUpdate = patients.find(p => p.name === prescriptionForm.patientName);
-      if (patientToUpdate) {
-        updatePatient(patientToUpdate.id, { hasPrescription: true });
-      }
-      
-      Alert.alert('Éxito', 'Receta registrada correctamente');
-    }
-
-    setShowNewPrescriptionModal(false);
-    setShowEditPrescriptionModal(false);
-    setPrescriptionForm({
-      patientName: '',
-      medication: '',
-      dosage: '',
-      frequency: '',
-      duration: '',
-      instructions: '',
-      diagnosis: '',
-    });
-    setIsEditing(false);
-  };
-
-  const handleDeletePrescription = (prescription) => {
-    Alert.alert(
-      'Eliminar receta',
-      `¿Estás seguro de que quieres eliminar la receta de ${prescription.patientName}?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Eliminar', 
-          style: 'destructive',
-          onPress: () => {
-            deletePrescription(prescription.id);
-            setShowPrescriptionModal(false);
-            
-            // Check if patient still has other prescriptions
-            const patientPrescriptions = getPrescriptionsByPatient(prescription.patientName);
-            if (patientPrescriptions.length === 0) {
-              const patientToUpdate = patients.find(p => p.name === prescription.patientName);
-              if (patientToUpdate) {
-                updatePatient(patientToUpdate.id, { hasPrescription: false });
-              }
-            }
-            
-            Alert.alert('Éxito', 'Receta eliminada correctamente');
-          }
-        },
-      ]
-    );
-  };
-
-  const handlePatientPress = (patient) => {
+  // --Función de selección de paciente--
+  // Abre el modal con los detalles del paciente seleccionado
+  const handlePatientSelect = (patient) => {
     setSelectedPatient(patient);
     setShowPatientModal(true);
   };
 
-  const renderPatientCard = (patient) => (
+  // --Función de cierre de modal--
+  // Cierra el modal de detalles del paciente
+  const handleCloseModal = () => {
+    setShowPatientModal(false);
+    setSelectedPatient(null);
+  };
+
+  // --Función de chat con paciente--
+  // Navega al chat con el paciente seleccionado
+  const handleChatWithPatient = (patient) => {
+    handleCloseModal();
+    navigation.navigate('DoctorChat', {
+      patient: patient,
+      appointment: null
+    });
+  };
+
+  // --Función de editar paciente--
+  // Navega a la pantalla de edición del paciente
+  const handleEditPatient = (patient) => {
+    handleCloseModal();
+    // Aquí podrías navegar a una pantalla de edición
+    Alert.alert('Editar paciente', 'Funcionalidad de edición próximamente disponible');
+  };
+
+  // --Función de eliminar paciente--
+  // Abre el modal de confirmación para eliminar un paciente
+  const handleDeletePatient = (patient) => {
+    setPatientToDelete(patient);
+    setShowDeleteModal(true);
+    handleCloseModal();
+  };
+
+  // --Función de confirmar eliminación--
+  // Confirma y ejecuta la eliminación del paciente
+  const handleConfirmDelete = () => {
+    if (patientToDelete) {
+      removePatient(patientToDelete.id);
+      setShowDeleteModal(false);
+      setPatientToDelete(null);
+      Alert.alert('Paciente eliminado', 'El paciente ha sido eliminado exitosamente');
+    }
+  };
+
+  // --Función de cancelar eliminación--
+  // Cancela el proceso de eliminación del paciente
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setPatientToDelete(null);
+  };
+
+  // --Función de renderizado de filtro--
+  // Renderiza cada filtro individual en la barra de filtros
+  const renderFilter = (filter) => (
     <TouchableOpacity
-      key={patient.id}
-      style={styles.patientCard}
-      onPress={() => handlePatientPress(patient)}
+      key={filter.id}
+      style={[
+        styles.filterButton,
+        selectedFilter === filter.id && styles.filterButtonActive
+      ]}
+      onPress={() => handleFilterSelect(filter.id)}
     >
-      <View style={styles.patientInfo}>
-        <View style={styles.patientImageContainer}>
-          <Image source={{ uri: patient.image }} style={styles.patientImage} />
+      <Ionicons
+        name={filter.icon}
+        size={getResponsiveFontSize(16, 18, 20)}
+        color={selectedFilter === filter.id ? '#FFFFFF' : '#666'}
+      />
+      <Text style={[
+        styles.filterButtonText,
+        selectedFilter === filter.id && styles.filterButtonTextActive,
+        { fontSize: getResponsiveFontSize(12, 13, 14) }
+      ]}>
+        {filter.label}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  // --Función de renderizado de paciente--
+  // Renderiza cada paciente individual en la lista
+  const renderPatient = ({ item: patient }) => (
+    <TouchableOpacity
+      style={styles.patientCard}
+      onPress={() => handlePatientSelect(patient)}
+    >
+      <View style={styles.patientCardHeader}>
+        <View style={styles.patientInfo}>
+          <Image
+            source={{ uri: patient.avatar }}
+            style={styles.patientAvatar}
+            defaultSource={require('../../../assets/default-avatar.png')}
+          />
+          <View style={styles.patientDetails}>
+            <Text style={[styles.patientName, { fontSize: getResponsiveFontSize(16, 17, 18) }]}>
+              {patient.name}
+            </Text>
+            <Text style={[styles.patientEmail, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
+              {patient.email}
+            </Text>
+            <Text style={[styles.patientPhone, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
+              {patient.phone}
+            </Text>
+          </View>
         </View>
-        <View style={styles.patientDetails}>
-          <Text style={[styles.patientName, { fontSize: getResponsiveFontSize(16, 17, 18) }]}>
-            {patient.name}
+        
+        <View style={styles.patientStatus}>
+          <View style={[
+            styles.statusIndicator,
+            patient.status === 'active' ? styles.statusActive : styles.statusInactive
+          ]} />
+          <Text style={[styles.statusText, { fontSize: getResponsiveFontSize(10, 11, 12) }]}>
+            {patient.status === 'active' ? 'Activo' : 'Inactivo'}
           </Text>
-          <Text style={[styles.patientDates, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
-            Última visita: {patient.lastVisit}
-          </Text>
-          <Text style={[styles.patientDates, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
-            Próxima cita: {patient.nextAppointment}
-          </Text>
-          {patient.hasPrescription && (
-            <View style={styles.prescriptionIndicator}>
-              <Ionicons name="medical" size={12} color="#34C759" />
-              <Text style={[styles.prescriptionText, { fontSize: getResponsiveFontSize(10, 11, 12) }]}>
-                Tiene receta activa
-              </Text>
-            </View>
-          )}
         </View>
       </View>
       
-      <View style={styles.patientActions}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.chatButton]}
-          onPress={(e) => {
-            e.stopPropagation();
-            handleChatPress(patient);
-          }}
-        >
-          <Ionicons name="chatbubble" size={getResponsiveFontSize(16, 17, 18)} color="#FFFFFF" />
-          <Text style={[styles.actionButtonText, styles.chatButtonText, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
-            Chat
-          </Text>
-          {patient.unreadMessages > 0 && (
-            <View style={styles.actionUnreadBadge}>
-              <Text style={styles.actionUnreadBadgeText}>{patient.unreadMessages}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+      <View style={styles.patientCardFooter}>
+        <View style={styles.patientStats}>
+          <View style={styles.statItem}>
+            <Text style={[styles.statNumber, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
+              {patient.appointmentsCount || 0}
+            </Text>
+            <Text style={[styles.statLabel, { fontSize: getResponsiveFontSize(10, 11, 12) }]}>
+              Citas
+            </Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={[styles.statNumber, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
+              {patient.prescriptionsCount || 0}
+            </Text>
+            <Text style={[styles.statLabel, { fontSize: getResponsiveFontSize(10, 11, 12) }]}>
+              Recetas
+            </Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={[styles.statNumber, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
+              {patient.lastVisit ? 'Sí' : 'No'}
+            </Text>
+            <Text style={[styles.statLabel, { fontSize: getResponsiveFontSize(10, 11, 12) }]}>
+              Última visita
+            </Text>
+          </View>
+        </View>
         
-        <TouchableOpacity
-          style={[styles.actionButton, styles.prescriptionButton]}
-          onPress={(e) => {
-            e.stopPropagation();
-            handlePrescriptionPress(patient);
-          }}
-        >
-          <Ionicons name="add-circle" size={getResponsiveFontSize(16, 17, 18)} color="#FFFFFF" />
-          <Text style={[styles.actionButtonText, styles.prescriptionButtonText, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
-            Nueva receta
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionButton, styles.viewPrescriptionButton]}
-          onPress={(e) => {
-            e.stopPropagation();
-            handleViewPrescriptions(patient);
-          }}
-        >
-          <Ionicons name="document-text" size={getResponsiveFontSize(16, 17, 18)} color="#FFFFFF" />
-          <Text style={[styles.actionButtonText, styles.viewPrescriptionButtonText, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
-            Ver recetas
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.patientActions}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => handleChatWithPatient(patient)}
+          >
+            <Ionicons name="chatbubble" size={getResponsiveFontSize(16, 18, 20)} color="#007AFF" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => handleEditPatient(patient)}
+          >
+            <Ionicons name="create" size={getResponsiveFontSize(16, 18, 20)} color="#FF9500" />
+          </TouchableOpacity>
+        </View>
       </View>
     </TouchableOpacity>
   );
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <TouchableOpacity 
-              style={styles.backButton}
-              onPress={() => navigation.goBack()}
-            >
-              <Ionicons name="arrow-back" size={24} color="#1A1A1A" />
-            </TouchableOpacity>
-            <Text style={styles.title}>Pacientes</Text>
-            <View style={styles.headerRight} />
-          </View>
-        </View>
-
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
-            <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Buscar pacientes..."
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </View>
-        </View>
-
-        {/* Stats */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Ionicons name="people" size={24} color="#34C759" />
-            <Text style={styles.statNumber}>{patients.length}</Text>
-            <Text style={styles.statLabel}>Total</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Ionicons name="chatbubbles" size={24} color="#007AFF" />
-            <Text style={styles.statNumber}>
-              {patients.filter(p => p.unreadMessages > 0).length}
+  // --Función de renderizado de modal de paciente--
+  // Renderiza el modal con los detalles completos del paciente
+  const renderPatientModal = () => (
+    <Modal
+      visible={showPatientModal}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={handleCloseModal}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalContent, isWeb && webStyles.modalContent]}>
+          <View style={styles.modalHeader}>
+            <Text style={[styles.modalTitle, { fontSize: getResponsiveFontSize(20, 22, 24) }]}>
+              Detalles del paciente
             </Text>
-            <Text style={styles.statLabel}>Con mensajes</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Ionicons name="medical" size={24} color="#FF9500" />
-            <Text style={styles.statNumber}>
-              {patients.filter(p => p.hasPrescription).length}
-            </Text>
-            <Text style={styles.statLabel}>Con recetas</Text>
-          </View>
-        </View>
-
-        {/* Patients List */}
-        <View style={styles.patientsContainer}>
-          <Text style={styles.sectionTitle}>Lista de pacientes</Text>
-          {filteredPatients.length > 0 ? (
-            filteredPatients.map(renderPatientCard)
-          ) : (
-            <View style={styles.emptyState}>
-              <Ionicons name="people-outline" size={64} color="#CCC" />
-              <Text style={styles.emptyTitle}>No se encontraron pacientes</Text>
-              <Text style={styles.emptySubtitle}>
-                Intenta con otro término de búsqueda
-              </Text>
-            </View>
-          )}
-        </View>
-      </ScrollView>
-
-      {/* Patient Modal */}
-      <Modal
-        visible={showPatientModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowPatientModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
             <TouchableOpacity
               style={styles.closeButton}
-              onPress={() => setShowPatientModal(false)}
+              onPress={handleCloseModal}
             >
-              <Ionicons name="close" size={24} color="#1A1A1A" />
+              <Ionicons name="close" size={getResponsiveFontSize(24, 26, 28)} color="#666" />
             </TouchableOpacity>
-            <View style={styles.modalHeader}>
-              <Image source={{ uri: selectedPatient?.image }} style={styles.modalImage} />
-              <Text style={styles.modalName}>{selectedPatient?.name}</Text>
-            </View>
-            <View style={styles.modalDetails}>
-              <View style={styles.detailItem}>
-                <Ionicons name="person" size={20} color="#666" />
-                <Text style={styles.detailLabel}>Edad: {selectedPatient?.age}</Text>
-              </View>
-              <View style={styles.detailItem}>
-                <Ionicons name="mail" size={20} color="#666" />
-                <Text style={styles.detailLabel}>Email: {selectedPatient?.email}</Text>
-              </View>
-              <View style={styles.detailItem}>
-                <Ionicons name="call" size={20} color="#666" />
-                <Text style={styles.detailLabel}>Teléfono: {selectedPatient?.phone}</Text>
-              </View>
-            </View>
-            <View style={styles.modalConsultations}>
-              <Text style={styles.consultationsTitle}>Consultas</Text>
-              {selectedPatient?.consultations && selectedPatient.consultations.length > 0 ? (
-                selectedPatient.consultations.map(consultation => (
-                  <View key={consultation.id} style={styles.consultationItem}>
-                    <Text style={styles.consultationDate}>{consultation.date}</Text>
-                    <Text style={styles.consultationReason}>{consultation.reason}</Text>
-                    <Text style={styles.consultationDiagnosis}>Diagnóstico: {consultation.diagnosis}</Text>
-                    <Text style={styles.consultationTreatment}>Tratamiento: {consultation.treatment}</Text>
-                    <Text style={styles.consultationStatus}>Estado: {consultation.status}</Text>
-                  </View>
-                ))
-              ) : (
-                <Text style={styles.noConsultationsText}>No hay consultas registradas.</Text>
-              )}
-            </View>
           </View>
-        </View>
-      </Modal>
-
-      {/* New Prescription Modal */}
-      <Modal
-        visible={showNewPrescriptionModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowNewPrescriptionModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { fontSize: getResponsiveFontSize(20, 22, 24) }]}>
-                {isEditing ? 'Editar Receta' : 'Nueva Receta'}
-              </Text>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setShowNewPrescriptionModal(false)}
-              >
-                <Ionicons name="close" size={24} color="#666" />
-              </TouchableOpacity>
-            </View>
-
+          
+          {selectedPatient && (
             <ScrollView style={styles.modalBody}>
-              <View style={styles.formSection}>
-                <Text style={[styles.formLabel, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                  Nombre del Paciente *
-                </Text>
-                <TextInput
-                  style={[styles.formInput, { fontSize: getResponsiveFontSize(14, 15, 16) }]}
-                  placeholder="Nombre completo del paciente"
-                  value={prescriptionForm.patientName}
-                  onChangeText={(text) => setPrescriptionForm({...prescriptionForm, patientName: text})}
+              <View style={styles.modalPatientInfo}>
+                <Image
+                  source={{ uri: selectedPatient.avatar }}
+                  style={styles.modalPatientAvatar}
+                  defaultSource={require('../../../assets/default-avatar.png')}
                 />
-              </View>
-
-              <View style={styles.formSection}>
-                <Text style={[styles.formLabel, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                  Medicamento *
+                <Text style={[styles.modalPatientName, { fontSize: getResponsiveFontSize(18, 20, 22) }]}>
+                  {selectedPatient.name}
                 </Text>
-                <TextInput
-                  style={[styles.formInput, { fontSize: getResponsiveFontSize(14, 15, 16) }]}
-                  placeholder="Ej: Ibuprofeno 400mg"
-                  value={prescriptionForm.medication}
-                  onChangeText={(text) => setPrescriptionForm({...prescriptionForm, medication: text})}
-                />
+                <Text style={[styles.modalPatientEmail, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
+                  {selectedPatient.email}
+                </Text>
               </View>
-
-              <View style={styles.formRow}>
-                <View style={[styles.formSection, { flex: 1, marginRight: 8 }]}>
-                  <Text style={[styles.formLabel, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                    Dosis
+              
+              <View style={styles.modalSection}>
+                <Text style={[styles.modalSectionTitle, { fontSize: getResponsiveFontSize(16, 17, 18) }]}>
+                  Información de contacto
+                </Text>
+                <View style={styles.modalInfoRow}>
+                  <Ionicons name="call" size={getResponsiveFontSize(16, 18, 20)} color="#666" />
+                  <Text style={[styles.modalInfoText, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
+                    {selectedPatient.phone}
                   </Text>
-                  <TextInput
-                    style={[styles.formInput, { fontSize: getResponsiveFontSize(14, 15, 16) }]}
-                    placeholder="Ej: 1 tableta"
-                    value={prescriptionForm.dosage}
-                    onChangeText={(text) => setPrescriptionForm({...prescriptionForm, dosage: text})}
-                  />
                 </View>
-                <View style={[styles.formSection, { flex: 1, marginLeft: 8 }]}>
-                  <Text style={[styles.formLabel, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                    Frecuencia
+                <View style={styles.modalInfoRow}>
+                  <Ionicons name="mail" size={getResponsiveFontSize(16, 18, 20)} color="#666" />
+                  <Text style={[styles.modalInfoText, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
+                    {selectedPatient.email}
                   </Text>
-                  <TextInput
-                    style={[styles.formInput, { fontSize: getResponsiveFontSize(14, 15, 16) }]}
-                    placeholder="Ej: Cada 8 horas"
-                    value={prescriptionForm.frequency}
-                    onChangeText={(text) => setPrescriptionForm({...prescriptionForm, frequency: text})}
-                  />
+                </View>
+                <View style={styles.modalInfoRow}>
+                  <Ionicons name="location" size={getResponsiveFontSize(16, 18, 20)} color="#666" />
+                  <Text style={[styles.modalInfoText, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
+                    {selectedPatient.address || 'No especificada'}
+                  </Text>
                 </View>
               </View>
-
-              <View style={styles.formSection}>
-                <Text style={[styles.formLabel, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                  Duración
+              
+              <View style={styles.modalSection}>
+                <Text style={[styles.modalSectionTitle, { fontSize: getResponsiveFontSize(16, 17, 18) }]}>
+                  Información médica
                 </Text>
-                <TextInput
-                  style={[styles.formInput, { fontSize: getResponsiveFontSize(14, 15, 16) }]}
-                  placeholder="Ej: 7 días"
-                  value={prescriptionForm.duration}
-                  onChangeText={(text) => setPrescriptionForm({...prescriptionForm, duration: text})}
-                />
-              </View>
-
-              <View style={styles.formSection}>
-                <Text style={[styles.formLabel, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                  Instrucciones
-                </Text>
-                <TextInput
-                  style={[styles.formInput, styles.textArea, { fontSize: getResponsiveFontSize(14, 15, 16) }]}
-                  placeholder="Instrucciones específicas para el paciente"
-                  value={prescriptionForm.instructions}
-                  onChangeText={(text) => setPrescriptionForm({...prescriptionForm, instructions: text})}
-                  multiline
-                  numberOfLines={3}
-                />
-              </View>
-
-              <View style={styles.formSection}>
-                <Text style={[styles.formLabel, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                  Diagnóstico
-                </Text>
-                <TextInput
-                  style={[styles.formInput, { fontSize: getResponsiveFontSize(14, 15, 16) }]}
-                  placeholder="Diagnóstico del paciente"
-                  value={prescriptionForm.diagnosis}
-                  onChangeText={(text) => setPrescriptionForm({...prescriptionForm, diagnosis: text})}
-                />
-              </View>
-            </ScrollView>
-
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowNewPrescriptionModal(false)}
-              >
-                <Text style={[styles.cancelButtonText, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                  Cancelar
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.saveButton]}
-                onPress={handleSavePrescription}
-              >
-                <Text style={[styles.saveButtonText, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                  Guardar Receta
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Edit Prescription Modal */}
-      <Modal
-        visible={showEditPrescriptionModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowEditPrescriptionModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { fontSize: getResponsiveFontSize(20, 22, 24) }]}>
-                Editar Receta
-              </Text>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setShowEditPrescriptionModal(false)}
-              >
-                <Ionicons name="close" size={24} color="#666" />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalBody}>
-              <View style={styles.formSection}>
-                <Text style={[styles.formLabel, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                  Nombre del Paciente *
-                </Text>
-                <TextInput
-                  style={[styles.formInput, { fontSize: getResponsiveFontSize(14, 15, 16) }]}
-                  placeholder="Nombre completo del paciente"
-                  value={prescriptionForm.patientName}
-                  onChangeText={(text) => setPrescriptionForm({...prescriptionForm, patientName: text})}
-                />
-              </View>
-
-              <View style={styles.formSection}>
-                <Text style={[styles.formLabel, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                  Medicamento *
-                </Text>
-                <TextInput
-                  style={[styles.formInput, { fontSize: getResponsiveFontSize(14, 15, 16) }]}
-                  placeholder="Ej: Ibuprofeno 400mg"
-                  value={prescriptionForm.medication}
-                  onChangeText={(text) => setPrescriptionForm({...prescriptionForm, medication: text})}
-                />
-              </View>
-
-              <View style={styles.formRow}>
-                <View style={[styles.formSection, { flex: 1, marginRight: 8 }]}>
-                  <Text style={[styles.formLabel, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                    Dosis
+                <View style={styles.modalInfoRow}>
+                  <Ionicons name="calendar" size={getResponsiveFontSize(16, 18, 20)} color="#666" />
+                  <Text style={[styles.modalInfoText, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
+                    Fecha de nacimiento: {selectedPatient.birthDate || 'No especificada'}
                   </Text>
-                  <TextInput
-                    style={[styles.formInput, { fontSize: getResponsiveFontSize(14, 15, 16) }]}
-                    placeholder="Ej: 1 tableta"
-                    value={prescriptionForm.dosage}
-                    onChangeText={(text) => setPrescriptionForm({...prescriptionForm, dosage: text})}
-                  />
                 </View>
-                <View style={[styles.formSection, { flex: 1, marginLeft: 8 }]}>
-                  <Text style={[styles.formLabel, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                    Frecuencia
+                <View style={styles.modalInfoRow}>
+                  <Ionicons name="medical" size={getResponsiveFontSize(16, 18, 20)} color="#666" />
+                  <Text style={[styles.modalInfoText, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
+                    Grupo sanguíneo: {selectedPatient.bloodType || 'No especificado'}
                   </Text>
-                  <TextInput
-                    style={[styles.formInput, { fontSize: getResponsiveFontSize(14, 15, 16) }]}
-                    placeholder="Ej: Cada 8 horas"
-                    value={prescriptionForm.frequency}
-                    onChangeText={(text) => setPrescriptionForm({...prescriptionForm, frequency: text})}
-                  />
+                </View>
+                <View style={styles.modalInfoRow}>
+                  <Ionicons name="alert-circle" size={getResponsiveFontSize(16, 18, 20)} color="#666" />
+                  <Text style={[styles.modalInfoText, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
+                    Alergias: {selectedPatient.allergies || 'Ninguna conocida'}
+                  </Text>
                 </View>
               </View>
-
-              <View style={styles.formSection}>
-                <Text style={[styles.formLabel, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                  Duración
+              
+              <View style={styles.modalSection}>
+                <Text style={[styles.modalSectionTitle, { fontSize: getResponsiveFontSize(16, 17, 18) }]}>
+                  Estadísticas
                 </Text>
-                <TextInput
-                  style={[styles.formInput, { fontSize: getResponsiveFontSize(14, 15, 16) }]}
-                  placeholder="Ej: 7 días"
-                  value={prescriptionForm.duration}
-                  onChangeText={(text) => setPrescriptionForm({...prescriptionForm, duration: text})}
-                />
-              </View>
-
-              <View style={styles.formSection}>
-                <Text style={[styles.formLabel, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                  Instrucciones
-                </Text>
-                <TextInput
-                  style={[styles.formInput, styles.textArea, { fontSize: getResponsiveFontSize(14, 15, 16) }]}
-                  placeholder="Instrucciones específicas para el paciente"
-                  value={prescriptionForm.instructions}
-                  onChangeText={(text) => setPrescriptionForm({...prescriptionForm, instructions: text})}
-                  multiline
-                  numberOfLines={3}
-                />
-              </View>
-
-              <View style={styles.formSection}>
-                <Text style={[styles.formLabel, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                  Diagnóstico
-                </Text>
-                <TextInput
-                  style={[styles.formInput, { fontSize: getResponsiveFontSize(14, 15, 16) }]}
-                  placeholder="Diagnóstico del paciente"
-                  value={prescriptionForm.diagnosis}
-                  onChangeText={(text) => setPrescriptionForm({...prescriptionForm, diagnosis: text})}
-                />
-              </View>
-            </ScrollView>
-
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowEditPrescriptionModal(false)}
-              >
-                <Text style={[styles.cancelButtonText, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                  Cancelar
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.saveButton]}
-                onPress={handleSavePrescription}
-              >
-                <Text style={[styles.saveButtonText, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                  Actualizar Receta
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* View Prescription Modal */}
-      <Modal
-        visible={showPrescriptionModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowPrescriptionModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { fontSize: getResponsiveFontSize(20, 22, 24) }]}>
-                Detalles de la Receta
-              </Text>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setShowPrescriptionModal(false)}
-              >
-                <Ionicons name="close" size={24} color="#666" />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalBody}>
-              {selectedPrescription && (
-                <View style={styles.prescriptionDetailsModal}>
-                  <View style={styles.prescriptionHeaderModal}>
-                    <Text style={[styles.patientNameModal, { fontSize: getResponsiveFontSize(18, 20, 22) }]}>
-                      Recetas de {selectedPrescription.patientName}
+                <View style={styles.modalStats}>
+                  <View style={styles.modalStat}>
+                    <Text style={[styles.modalStatNumber, { fontSize: getResponsiveFontSize(20, 22, 24) }]}>
+                      {selectedPatient.appointmentsCount || 0}
+                    </Text>
+                    <Text style={[styles.modalStatLabel, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
+                      Citas totales
                     </Text>
                   </View>
-
-                  {getPrescriptionsByPatient(selectedPrescription.patientName).map((prescription, index) => (
-                    <View key={prescription.id} style={styles.prescriptionCard}>
-                      <View style={styles.prescriptionCardHeader}>
-                        <Text style={[styles.prescriptionCardTitle, { fontSize: getResponsiveFontSize(16, 17, 18) }]}>
-                          Receta #{index + 1}
-                        </Text>
-                        <View style={[
-                          styles.statusBadge,
-                          prescription.status === 'Activa' ? styles.statusActive : styles.statusCompleted
-                        ]}>
-                          <Text style={[styles.statusText, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
-                            {prescription.status}
-                          </Text>
-                        </View>
-                      </View>
-
-                      <View style={styles.detailSection}>
-                        <Text style={[styles.detailLabel, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                          Fecha:
-                        </Text>
-                        <Text style={[styles.detailValue, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                          {prescription.date}
-                        </Text>
-                      </View>
-
-                      <View style={styles.detailSection}>
-                        <Text style={[styles.detailLabel, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                          Medicamento:
-                        </Text>
-                        <Text style={[styles.detailValue, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                          {prescription.medication}
-                        </Text>
-                      </View>
-
-                      <View style={styles.detailSection}>
-                        <Text style={[styles.detailLabel, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                          Dosis:
-                        </Text>
-                        <Text style={[styles.detailValue, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                          {prescription.dosage}
-                        </Text>
-                      </View>
-
-                      <View style={styles.detailSection}>
-                        <Text style={[styles.detailLabel, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                          Frecuencia:
-                        </Text>
-                        <Text style={[styles.detailValue, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                          {prescription.frequency}
-                        </Text>
-                      </View>
-
-                      <View style={styles.detailSection}>
-                        <Text style={[styles.detailLabel, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                          Duración:
-                        </Text>
-                        <Text style={[styles.detailValue, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                          {prescription.duration}
-                        </Text>
-                      </View>
-
-                      <View style={styles.detailSection}>
-                        <Text style={[styles.detailLabel, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                          Instrucciones:
-                        </Text>
-                        <Text style={[styles.detailValue, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                          {prescription.instructions}
-                        </Text>
-                      </View>
-
-                      <View style={styles.detailSection}>
-                        <Text style={[styles.detailLabel, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                          Diagnóstico:
-                        </Text>
-                        <Text style={[styles.detailValue, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                          {prescription.diagnosis}
-                        </Text>
-                      </View>
-
-                      <View style={styles.prescriptionCardActions}>
-                        <TouchableOpacity
-                          style={[styles.prescriptionActionButton, styles.editActionButton]}
-                          onPress={() => {
-                            setShowPrescriptionModal(false);
-                            handleEditPrescription(prescription);
-                          }}
-                        >
-                          <Text style={[styles.prescriptionActionText, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
-                            Editar
-                          </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={[styles.prescriptionActionButton, styles.deleteActionButton]}
-                          onPress={() => handleDeletePrescription(prescription)}
-                        >
-                          <Text style={[styles.prescriptionActionText, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
-                            Eliminar
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  ))}
+                  <View style={styles.modalStat}>
+                    <Text style={[styles.modalStatNumber, { fontSize: getResponsiveFontSize(20, 22, 24) }]}>
+                      {selectedPatient.prescriptionsCount || 0}
+                    </Text>
+                    <Text style={[styles.modalStatLabel, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
+                      Recetas emitidas
+                    </Text>
+                  </View>
+                  <View style={styles.modalStat}>
+                    <Text style={[styles.modalStatNumber, { fontSize: getResponsiveFontSize(20, 22, 24) }]}>
+                      {selectedPatient.lastVisit ? 'Sí' : 'No'}
+                    </Text>
+                    <Text style={[styles.modalStatLabel, { fontSize: getResponsiveFontSize(12, 13, 14) }]}>
+                      Última visita
+                    </Text>
+                  </View>
                 </View>
-              )}
+              </View>
             </ScrollView>
+          )}
+          
+          <View style={styles.modalFooter}>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.modalButtonSecondary]}
+              onPress={handleCloseModal}
+            >
+              <Text style={[styles.modalButtonText, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
+                Cerrar
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.modalButtonPrimary]}
+              onPress={() => handleChatWithPatient(selectedPatient)}
+            >
+              <Text style={[styles.modalButtonText, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
+                Chat
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.modalButtonDanger]}
+              onPress={() => handleDeletePatient(selectedPatient)}
+            >
+              <Text style={[styles.modalButtonText, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
+                Eliminar
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowPrescriptionModal(false)}
-              >
-                <Text style={[styles.cancelButtonText, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
-                  Cerrar
-                </Text>
-              </TouchableOpacity>
+  // --Función de renderizado de modal de eliminación--
+  // Renderiza el modal de confirmación para eliminar un paciente
+  const renderDeleteModal = () => (
+    <Modal
+      visible={showDeleteModal}
+      animationType="fade"
+      transparent={true}
+      onRequestClose={handleCancelDelete}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={[styles.deleteModalContent, isWeb && webStyles.modalContent]}>
+          <View style={styles.deleteModalHeader}>
+            <Ionicons name="warning" size={getResponsiveFontSize(48, 52, 56)} color="#FF3B30" />
+            <Text style={[styles.deleteModalTitle, { fontSize: getResponsiveFontSize(18, 20, 22) }]}>
+              Eliminar paciente
+            </Text>
+          </View>
+          
+          <Text style={[styles.deleteModalMessage, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
+            ¿Estás seguro de que quieres eliminar a {patientToDelete?.name}? Esta acción no se puede deshacer.
+          </Text>
+          
+          <View style={styles.deleteModalActions}>
+            <TouchableOpacity
+              style={[styles.deleteModalButton, styles.deleteModalButtonCancel]}
+              onPress={handleCancelDelete}
+            >
+              <Text style={[styles.deleteModalButtonText, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
+                Cancelar
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.deleteModalButton, styles.deleteModalButtonConfirm]}
+              onPress={handleConfirmDelete}
+            >
+              <Text style={[styles.deleteModalButtonText, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
+                Eliminar
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={[styles.content, isWeb && webStyles.container]}>
+        {/* Header */}
+        <View style={[styles.header, { paddingHorizontal: getResponsivePadding(20, 40, 60) }]}>
+          <View style={styles.headerTop}>
+            <View style={styles.headerInfo}>
+              <Text style={[styles.title, { fontSize: getResponsiveFontSize(28, 30, 32) }]}>
+                Mis pacientes
+              </Text>
+              <Text style={[styles.subtitle, { fontSize: getResponsiveFontSize(16, 17, 18) }]}>
+                {filteredPatients.length} paciente{filteredPatients.length !== 1 ? 's' : ''} encontrado{filteredPatients.length !== 1 ? 's' : ''}
+              </Text>
             </View>
           </View>
         </View>
-      </Modal>
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Search and Filters */}
+          <View style={[styles.searchFiltersContainer, { paddingHorizontal: getResponsivePadding(20, 40, 60) }]}>
+            {/* Search Bar */}
+            <View style={styles.searchContainer}>
+              <Ionicons name="search" size={getResponsiveFontSize(20, 22, 24)} color="#666" />
+              <TextInput
+                style={[styles.searchInput, { fontSize: getResponsiveFontSize(14, 15, 16) }]}
+                placeholder="Buscar pacientes..."
+                placeholderTextColor="#999"
+                value={searchQuery}
+                onChangeText={handleSearch}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity
+                  style={styles.clearSearchButton}
+                  onPress={() => setSearchQuery('')}
+                >
+                  <Ionicons name="close-circle" size={getResponsiveFontSize(20, 22, 24)} color="#999" />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Filters */}
+            <View style={styles.filtersContainer}>
+              {filters.map(renderFilter)}
+            </View>
+          </View>
+
+          {/* Patients List */}
+          <View style={[styles.patientsContainer, { paddingHorizontal: getResponsivePadding(20, 40, 60) }]}>
+            {filteredPatients.length > 0 ? (
+              <FlatList
+                data={filteredPatients}
+                renderItem={renderPatient}
+                keyExtractor={(item) => item.id}
+                scrollEnabled={false}
+                showsVerticalScrollIndicator={false}
+                ItemSeparatorComponent={() => <View style={styles.separator} />}
+              />
+            ) : (
+              <View style={styles.emptyState}>
+                <Ionicons name="people" size={getResponsiveFontSize(64, 68, 72)} color="#CCC" />
+                <Text style={[styles.emptyStateTitle, { fontSize: getResponsiveFontSize(18, 20, 22) }]}>
+                  No se encontraron pacientes
+                </Text>
+                <Text style={[styles.emptyStateMessage, { fontSize: getResponsiveFontSize(14, 15, 16) }]}>
+                  {searchQuery || selectedFilter !== 'all' 
+                    ? 'Intenta ajustar tu búsqueda o filtros'
+                    : 'Aún no tienes pacientes registrados'
+                  }
+                </Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </View>
+
+      {/* Patient Modal */}
+      {renderPatientModal()}
+
+      {/* Delete Confirmation Modal */}
+      {renderDeleteModal()}
     </SafeAreaView>
   );
 };
 
+// --Estilos del componente--
+// Define todos los estilos visuales de la pantalla de pacientes del doctor
 const styles = StyleSheet.create({
+  // --Contenedor principal--
+  // Estilo del contenedor principal de la pantalla
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
+  
+  // --Contenido--
+  // Estilo del contenido principal de la pantalla
+  content: {
+    flex: 1,
   },
+  
+  // --Encabezado--
+  // Estilo del encabezado de la pantalla
+  header: {
+    paddingTop: getResponsiveSpacing(20, 30, 40),
+    paddingBottom: getResponsiveSpacing(16, 20, 24),
+  },
+  
+  // --Parte superior del encabezado--
+  // Estilo de la parte superior del encabezado
   headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  backButton: {
-    padding: 8,
+  
+  // --Información del encabezado--
+  // Estilo del contenedor de información del encabezado
+  headerInfo: {
+    flex: 1,
+    alignItems: 'center',
   },
+  
+  // --Título principal--
+  // Estilo del título principal de la pantalla
   title: {
-    fontSize: 28,
     fontWeight: 'bold',
     color: '#1A1A1A',
+    marginBottom: 4,
+  },
+  
+  // --Subtítulo--
+  // Estilo del subtítulo que muestra el número de pacientes
+  subtitle: {
+    color: '#666',
+  },
+  
+  // --Vista de desplazamiento--
+  // Estilo de la vista de desplazamiento principal
+  scrollView: {
     flex: 1,
-    textAlign: 'center',
   },
-  headerRight: {
-    width: 40,
+  
+  // --Contenido del desplazamiento--
+  // Estilo del contenido dentro de la vista de desplazamiento
+  scrollContent: {
+    paddingBottom: getResponsiveSpacing(20, 30, 40),
   },
+  
+  // --Contenedor de búsqueda y filtros--
+  // Estilo del contenedor que incluye la barra de búsqueda y filtros
+  searchFiltersContainer: {
+    marginBottom: getResponsiveSpacing(24, 32, 40),
+  },
+  
+  // --Contenedor de búsqueda--
+  // Estilo del contenedor de la barra de búsqueda
   searchContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -852,62 +648,75 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  searchIcon: {
-    marginRight: 12,
-  },
+  
+  // --Entrada de búsqueda--
+  // Estilo del campo de texto para la búsqueda
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    marginLeft: 12,
     color: '#1A1A1A',
   },
-  statsContainer: {
+  
+  // --Botón de limpiar búsqueda--
+  // Estilo del botón para limpiar el texto de búsqueda
+  clearSearchButton: {
+    padding: 4,
+  },
+  
+  // --Contenedor de filtros--
+  // Estilo del contenedor que organiza todos los filtros
+  filtersContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 24,
+    flexWrap: 'wrap',
     gap: 12,
   },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
+  
+  // --Botón de filtro--
+  // Estilo de cada botón de filtro individual
+  filterButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E1E5E9',
+    gap: 8,
   },
-  statNumber: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
-    marginTop: 8,
-    marginBottom: 4,
+  
+  // --Botón de filtro activo--
+  // Estilo del botón de filtro cuando está seleccionado
+  filterButtonActive: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
   },
-  statLabel: {
-    fontSize: 12,
+  
+  // --Texto del botón de filtro--
+  // Estilo del texto en los botones de filtro
+  filterButtonText: {
     color: '#666',
-    textAlign: 'center',
+    fontWeight: '500',
   },
+  
+  // --Texto del botón de filtro activo--
+  // Estilo del texto cuando el filtro está activo
+  filterButtonTextActive: {
+    color: '#FFFFFF',
+  },
+  
+  // --Contenedor de pacientes--
+  // Estilo del contenedor que muestra la lista de pacientes
   patientsContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: getResponsiveSpacing(24, 32, 40),
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1A1A1A',
-    marginBottom: 16,
-  },
+  
+  // --Tarjeta de paciente--
+  // Estilo de cada tarjeta individual de paciente
   patientCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
-    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -917,428 +726,429 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  patientInfo: {
+  
+  // --Encabezado de tarjeta de paciente--
+  // Estilo del encabezado de cada tarjeta de paciente
+  patientCardHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: 16,
   },
-  patientImageContainer: {
-    position: 'relative',
-    marginRight: 16,
-  },
-  patientImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-  },
-  unreadBadge: {
-    position: 'absolute',
-    top: -5,
-    right: -5,
-    backgroundColor: '#FF3B30',
-    borderRadius: 12,
-    minWidth: 24,
-    height: 24,
-    justifyContent: 'center',
+  
+  // --Información del paciente--
+  // Estilo del contenedor de información básica del paciente
+  patientInfo: {
+    flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
-  unreadBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: 'bold',
+  
+  // --Avatar del paciente--
+  // Estilo de la imagen de perfil del paciente
+  patientAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginRight: 12,
   },
+  
+  // --Detalles del paciente--
+  // Estilo del contenedor de detalles del paciente
   patientDetails: {
     flex: 1,
   },
+  
+  // --Nombre del paciente--
+  // Estilo del nombre del paciente en la tarjeta
   patientName: {
-    fontSize: 18,
     fontWeight: 'bold',
     color: '#1A1A1A',
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  patientDates: {
-    marginBottom: 8,
+  
+  // --Email del paciente--
+  // Estilo del email del paciente en la tarjeta
+  patientEmail: {
+    color: '#666',
+    marginBottom: 2,
   },
-  prescriptionIndicator: {
-    flexDirection: 'row',
+  
+  // --Teléfono del paciente--
+  // Estilo del teléfono del paciente en la tarjeta
+  patientPhone: {
+    color: '#666',
+  },
+  
+  // --Estado del paciente--
+  // Estilo del contenedor que muestra el estado del paciente
+  patientStatus: {
     alignItems: 'center',
   },
-  prescriptionText: {
-    fontSize: 12,
-    color: '#34C759',
-    fontWeight: '600',
-    marginLeft: 4,
+  
+  // --Indicador de estado--
+  // Estilo del indicador visual del estado del paciente
+  statusIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginBottom: 4,
   },
-  patientActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    position: 'relative',
-  },
-  actionButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  chatButton: {
-    backgroundColor: '#007AFF',
-  },
-  chatButtonText: {
-    color: '#FFFFFF',
-  },
-  prescriptionButton: {
+  
+  // --Estado activo--
+  // Estilo del indicador cuando el paciente está activo
+  statusActive: {
     backgroundColor: '#34C759',
   },
-  prescriptionButtonText: {
-    color: '#FFFFFF',
-  },
-  viewPrescriptionButton: {
-    backgroundColor: '#FF9500',
-  },
-  viewPrescriptionButtonText: {
-    color: '#FFFFFF',
-  },
-  actionUnreadBadge: {
-    position: 'absolute',
-    top: -5,
-    right: -5,
+  
+  // --Estado inactivo--
+  // Estilo del indicador cuando el paciente está inactivo
+  statusInactive: {
     backgroundColor: '#FF3B30',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    justifyContent: 'center',
+  },
+  
+  // --Texto de estado--
+  // Estilo del texto que describe el estado del paciente
+  statusText: {
+    color: '#666',
+    fontWeight: '500',
+  },
+  
+  // --Pie de tarjeta de paciente--
+  // Estilo del pie de cada tarjeta de paciente
+  patientCardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  actionUnreadBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: 'bold',
+  
+  // --Estadísticas del paciente--
+  // Estilo del contenedor de estadísticas del paciente
+  patientStats: {
+    flexDirection: 'row',
+    gap: 16,
   },
+  
+  // --Elemento de estadística--
+  // Estilo de cada estadística individual del paciente
+  statItem: {
+    alignItems: 'center',
+  },
+  
+  // --Número de estadística--
+  // Estilo del número principal en cada estadística
+  statNumber: {
+    fontWeight: 'bold',
+    color: '#1A1A1A',
+    marginBottom: 2,
+  },
+  
+  // --Etiqueta de estadística--
+  // Estilo de la etiqueta descriptiva en cada estadística
+  statLabel: {
+    color: '#666',
+    textAlign: 'center',
+  },
+  
+  // --Acciones del paciente--
+  // Estilo del contenedor de botones de acción para el paciente
+  patientActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  
+  // --Botón de acción--
+  // Estilo de cada botón de acción individual
+  actionButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#F8F9FA',
+  },
+  
+  // --Separador--
+  // Estilo del separador entre tarjetas de pacientes
+  separator: {
+    height: 12,
+  },
+  
+  // --Estado vacío--
+  // Estilo del contenedor cuando no hay pacientes para mostrar
   emptyState: {
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
+    paddingVertical: getResponsiveSpacing(40, 60, 80),
   },
-  emptyTitle: {
-    fontSize: 18,
+  
+  // --Título del estado vacío--
+  // Estilo del título cuando no hay pacientes
+  emptyStateTitle: {
     fontWeight: 'bold',
     color: '#666',
     marginTop: 16,
     marginBottom: 8,
   },
-  emptySubtitle: {
-    fontSize: 14,
+  
+  // --Mensaje del estado vacío--
+  // Estilo del mensaje explicativo cuando no hay pacientes
+  emptyStateMessage: {
     color: '#999',
     textAlign: 'center',
-    paddingHorizontal: 40,
-    lineHeight: 20,
+    maxWidth: 300,
   },
-  modalContent: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-    padding: 20,
-    paddingTop: 50, // Adjust for status bar
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 20,
-    right: 20,
-    zIndex: 1,
-  },
-  modalHeader: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginBottom: 10,
-  },
-  modalName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
-  },
-  modalDetails: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  detailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  detailLabel: {
-    fontSize: 16,
-    color: '#666',
-    marginLeft: 10,
-  },
-  modalConsultations: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  consultationsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
-    marginBottom: 10,
-  },
-  consultationItem: {
-    backgroundColor: '#F0F0F0',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 10,
-  },
-  consultationDate: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
-    marginBottom: 4,
-  },
-  consultationReason: {
-    fontSize: 14,
-    color: '#333',
-    marginBottom: 4,
-  },
-  consultationDiagnosis: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  consultationTreatment: {
-    fontSize: 14,
-    color: '#333',
-    marginBottom: 4,
-  },
-  consultationStatus: {
-    fontSize: 14,
-    color: '#34C759',
-    fontWeight: 'bold',
-  },
-  noConsultationsText: {
-    fontSize: 14,
-    color: '#999',
-    textAlign: 'center',
-  },
+  
+  // --Modal--
+  // Estilos para todos los modales de la pantalla
+  
+  // --Superposición del modal--
+  // Estilo de la superposición oscura detrás del modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
+  
+  // --Contenido del modal--
+  // Estilo del contenedor principal del modal
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    width: '90%',
+    maxWidth: 500,
+    maxHeight: '80%',
+  },
+  
+  // --Encabezado del modal--
+  // Estilo del encabezado del modal
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E1E5E9',
+  },
+  
+  // --Título del modal--
+  // Estilo del título principal del modal
   modalTitle: {
     fontWeight: 'bold',
     color: '#1A1A1A',
-    textAlign: 'center',
-    marginBottom: 20,
   },
+  
+  // --Botón de cerrar--
+  // Estilo del botón para cerrar el modal
+  closeButton: {
+    padding: 4,
+  },
+  
+  // --Cuerpo del modal--
+  // Estilo del cuerpo principal del modal
   modalBody: {
-    flex: 1,
-    marginBottom: 20,
+    padding: 20,
   },
-  formSection: {
-    marginBottom: 15,
+  
+  // --Información del paciente en modal--
+  // Estilo del contenedor de información del paciente en el modal
+  modalPatientInfo: {
+    alignItems: 'center',
+    marginBottom: 24,
   },
-  formLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
+  
+  // --Avatar del paciente en modal--
+  // Estilo del avatar del paciente en el modal
+  modalPatientAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 16,
   },
-  formInput: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    fontSize: 14,
+  
+  // --Nombre del paciente en modal--
+  // Estilo del nombre del paciente en el modal
+  modalPatientName: {
+    fontWeight: 'bold',
     color: '#1A1A1A',
+    marginBottom: 4,
   },
-  textArea: {
-    minHeight: 80,
-    paddingTop: 12,
-    paddingBottom: 12,
-    textAlignVertical: 'top',
+  
+  // --Email del paciente en modal--
+  // Estilo del email del paciente en el modal
+  modalPatientEmail: {
+    color: '#666',
   },
-  formRow: {
+  
+  // --Sección del modal--
+  // Estilo de cada sección de información en el modal
+  modalSection: {
+    marginBottom: 24,
+  },
+  
+  // --Título de sección del modal--
+  // Estilo del título de cada sección en el modal
+  modalSectionTitle: {
+    fontWeight: 'bold',
+    color: '#1A1A1A',
+    marginBottom: 16,
+  },
+  
+  // --Fila de información del modal--
+  // Estilo de cada fila de información en el modal
+  modalInfoRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 15,
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 12,
   },
-  modalFooter: {
+  
+  // --Texto de información del modal--
+  // Estilo del texto de información en el modal
+  modalInfoText: {
+    color: '#666',
+    flex: 1,
+  },
+  
+  // --Estadísticas del modal--
+  // Estilo del contenedor de estadísticas en el modal
+  modalStats: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingTop: 15,
   },
+  
+  // --Estadística del modal--
+  // Estilo de cada estadística individual en el modal
+  modalStat: {
+    alignItems: 'center',
+  },
+  
+  // --Número de estadística del modal--
+  // Estilo del número principal en cada estadística del modal
+  modalStatNumber: {
+    fontWeight: 'bold',
+    color: '#1A1A1A',
+    marginBottom: 4,
+  },
+  
+  // --Etiqueta de estadística del modal--
+  // Estilo de la etiqueta descriptiva en cada estadística del modal
+  modalStatLabel: {
+    color: '#666',
+    textAlign: 'center',
+  },
+  
+  // --Pie del modal--
+  // Estilo del pie del modal con botones de acción
+  modalFooter: {
+    flexDirection: 'row',
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E1E5E9',
+    gap: 12,
+  },
+  
+  // --Botón del modal--
+  // Estilo base para todos los botones del modal
   modalButton: {
     flex: 1,
     paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveButton: {
-    backgroundColor: '#34C759',
-    borderColor: '#34C759',
-  },
-  saveButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  cancelButton: {
-    backgroundColor: '#E0E0E0',
-    borderColor: '#E0E0E0',
-  },
-  cancelButtonText: {
-    color: '#1A1A1A',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  editButton: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
-  },
-  editButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  deleteButton: {
-    backgroundColor: '#FF3B30',
-    borderColor: '#FF3B30',
-  },
-  deleteButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  statusBadge: {
-    backgroundColor: '#E0E0E0',
-    borderRadius: 10,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    alignSelf: 'flex-start',
-  },
-  statusActive: {
-    backgroundColor: '#34C759',
-  },
-  statusCompleted: {
-    backgroundColor: '#FF9500',
-  },
-  statusText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  prescriptionDetailsModal: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  prescriptionHeaderModal: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  patientNameModal: {
-    fontWeight: 'bold',
-    color: '#1A1A1A',
-  },
-  detailSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  detailLabel: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: 'bold',
-  },
-  detailValue: {
-    fontSize: 14,
-    color: '#333',
-    fontWeight: '600',
-  },
-  prescriptionCard: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  prescriptionCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  prescriptionCardTitle: {
-    fontWeight: 'bold',
-    color: '#1A1A1A',
-  },
-  prescriptionCardActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 15,
-    gap: 10,
-  },
-  prescriptionActionButton: {
-    flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
     borderRadius: 8,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  editActionButton: {
+  
+  // --Botón secundario del modal--
+  // Estilo del botón secundario (cerrar) del modal
+  modalButtonSecondary: {
+    backgroundColor: '#F8F9FA',
+  },
+  
+  // --Botón primario del modal--
+  // Estilo del botón primario (chat) del modal
+  modalButtonPrimary: {
     backgroundColor: '#007AFF',
   },
-  deleteActionButton: {
+  
+  // --Botón de peligro del modal--
+  // Estilo del botón de peligro (eliminar) del modal
+  modalButtonDanger: {
     backgroundColor: '#FF3B30',
   },
-  prescriptionActionText: {
+  
+  // --Texto del botón del modal--
+  // Estilo del texto en todos los botones del modal
+  modalButtonText: {
+    fontWeight: '600',
     color: '#FFFFFF',
-    fontSize: 12,
+  },
+  
+  // --Modal de eliminación--
+  // Estilos específicos para el modal de confirmación de eliminación
+  
+  // --Contenido del modal de eliminación--
+  // Estilo del contenedor principal del modal de eliminación
+  deleteModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    width: '90%',
+    maxWidth: 400,
+    padding: 24,
+  },
+  
+  // --Encabezado del modal de eliminación--
+  // Estilo del encabezado del modal de eliminación
+  deleteModalHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  
+  // --Título del modal de eliminación--
+  // Estilo del título del modal de eliminación
+  deleteModalTitle: {
     fontWeight: 'bold',
+    color: '#1A1A1A',
+    marginTop: 16,
+  },
+  
+  // --Mensaje del modal de eliminación--
+  // Estilo del mensaje explicativo del modal de eliminación
+  deleteModalMessage: {
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  
+  // --Acciones del modal de eliminación--
+  // Estilo del contenedor de botones del modal de eliminación
+  deleteModalActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  
+  // --Botón del modal de eliminación--
+  // Estilo base para todos los botones del modal de eliminación
+  deleteModalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  
+  // --Botón de cancelar eliminación--
+  // Estilo del botón para cancelar la eliminación
+  deleteModalButtonCancel: {
+    backgroundColor: '#F8F9FA',
+  },
+  
+  // --Botón de confirmar eliminación--
+  // Estilo del botón para confirmar la eliminación
+  deleteModalButtonConfirm: {
+    backgroundColor: '#FF3B30',
+  },
+  
+  // --Texto del botón del modal de eliminación--
+  // Estilo del texto en todos los botones del modal de eliminación
+  deleteModalButtonText: {
+    fontWeight: '600',
+    color: '#1A1A1A',
   },
 });
 

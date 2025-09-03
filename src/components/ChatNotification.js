@@ -1,11 +1,23 @@
+// --Imports de React Native--
+// Importa las funcionalidades básicas de React y React Native
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
+
+// --Imports de iconos--
+// Importa iconos de Ionicons para la interfaz de usuario
 import { Ionicons } from '@expo/vector-icons';
 
 const ChatNotification = ({ notification, onPress, onDismiss }) => {
+  // --Animación de deslizamiento--
+  // Controla la animación de entrada y salida de la notificación
   const slideAnim = useRef(new Animated.Value(-100)).current;
+  
+  // --Animación de opacidad--
+  // Controla la transparencia de la notificación
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
+  // --Efecto de animación--
+  // Inicia las animaciones de entrada y configura el auto-dismiss
   useEffect(() => {
     // Animación de entrada
     Animated.parallel([
@@ -29,6 +41,8 @@ const ChatNotification = ({ notification, onPress, onDismiss }) => {
     return () => clearTimeout(timer);
   }, []);
 
+  // --Descartar notificación--
+  // Ejecuta la animación de salida y llama al callback de dismiss
   const dismissNotification = () => {
     Animated.parallel([
       Animated.timing(slideAnim, {
@@ -46,6 +60,8 @@ const ChatNotification = ({ notification, onPress, onDismiss }) => {
     });
   };
 
+  // --Obtener icono de notificación--
+  // Retorna el icono apropiado según el tipo de notificación
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'message':
@@ -59,6 +75,8 @@ const ChatNotification = ({ notification, onPress, onDismiss }) => {
     }
   };
 
+  // --Obtener color de notificación--
+  // Retorna el color apropiado según el tipo de notificación
   const getNotificationColor = (type) => {
     switch (type) {
       case 'message':
@@ -103,6 +121,8 @@ const ChatNotification = ({ notification, onPress, onDismiss }) => {
 };
 
 const styles = StyleSheet.create({
+  // --Contenedor principal--
+  // Contenedor principal de la notificación con posicionamiento absoluto
   container: {
     position: 'absolute',
     top: 50,
@@ -110,6 +130,9 @@ const styles = StyleSheet.create({
     right: 16,
     zIndex: 1000,
   },
+  
+  // --Contenido de la notificación--
+  // Contenedor interno con diseño horizontal y sombras
   notificationContent: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -127,6 +150,9 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: '#007AFF',
   },
+  
+  // --Contenedor del icono--
+  // Contenedor circular para el icono de la notificación
   iconContainer: {
     width: 40,
     height: 40,
@@ -135,20 +161,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
+  
+  // --Contenedor de texto--
+  // Contenedor para el título y mensaje de la notificación
   textContainer: {
     flex: 1,
   },
+  
+  // --Título de la notificación--
+  // Estilo para el título principal de la notificación
   title: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1A1A1A',
     marginBottom: 2,
   },
+  
+  // --Mensaje de la notificación--
+  // Estilo para el mensaje descriptivo de la notificación
   message: {
     fontSize: 14,
     color: '#666',
     lineHeight: 18,
   },
+  
+  // --Botón de descartar--
+  // Botón para cerrar/dismiss la notificación
   dismissButton: {
     padding: 4,
     marginLeft: 8,

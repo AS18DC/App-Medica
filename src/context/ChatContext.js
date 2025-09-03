@@ -1,7 +1,13 @@
+// --Imports de React--
+// Importa las funcionalidades básicas de React para crear contexto y manejar estado
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 
+// --Contexto de chat--
+// Contexto principal para manejar el estado del chat en toda la aplicación
 const ChatContext = createContext();
 
+// --Estado inicial--
+// Estado inicial del contexto con conversaciones, conversación activa y contadores
 const initialState = {
   conversations: [],
   activeConversation: null,
@@ -11,18 +17,26 @@ const initialState = {
   notifications: [],
 };
 
+// --Reducer del chat--
+// Maneja todas las acciones del chat (agregar mensajes, actualizar estado, etc.)
 const chatReducer = (state, action) => {
   switch (action.type) {
+    // --Establecer conversaciones--
+    // Reemplaza la lista completa de conversaciones
     case 'SET_CONVERSATIONS':
       return {
         ...state,
         conversations: action.payload,
       };
+    // --Agregar conversación--
+    // Añade una nueva conversación al inicio de la lista
     case 'ADD_CONVERSATION':
       return {
         ...state,
         conversations: [action.payload, ...state.conversations],
       };
+    // --Actualizar conversación--
+    // Actualiza una conversación existente con nuevos datos
     case 'UPDATE_CONVERSATION':
       return {
         ...state,
@@ -30,11 +44,15 @@ const chatReducer = (state, action) => {
           conv.id === action.payload.id ? { ...conv, ...action.payload } : conv
         ),
       };
+    // --Establecer conversación activa--
+    // Define cuál es la conversación actualmente activa
     case 'SET_ACTIVE_CONVERSATION':
       return {
         ...state,
         activeConversation: action.payload,
       };
+    // --Agregar mensaje--
+    // Añade un nuevo mensaje a una conversación específica
     case 'ADD_MESSAGE':
       const { conversationId, message } = action.payload;
       return {
@@ -57,26 +75,36 @@ const chatReducer = (state, action) => {
             }
           : state.activeConversation,
       };
+    // --Establecer estado de escritura--
+    // Indica si alguien está escribiendo en el chat
     case 'SET_TYPING':
       return {
         ...state,
         isTyping: action.payload,
       };
+    // --Establecer doctores en línea--
+    // Actualiza la lista de doctores disponibles para chatear
     case 'SET_ONLINE_DOCTORS':
       return {
         ...state,
         onlineDoctors: action.payload,
       };
+    // --Agregar notificación--
+    // Añade una nueva notificación al sistema
     case 'ADD_NOTIFICATION':
       return {
         ...state,
         notifications: [action.payload, ...state.notifications],
       };
+    // --Limpiar notificación--
+    // Elimina una notificación específica del sistema
     case 'CLEAR_NOTIFICATION':
       return {
         ...state,
         notifications: state.notifications.filter(notif => notif.id !== action.payload),
       };
+    // --Marcar conversación como leída--
+    // Resetea el contador de mensajes no leídos de una conversación
     case 'MARK_CONVERSATION_READ':
       return {
         ...state,
@@ -84,6 +112,8 @@ const chatReducer = (state, action) => {
           conv.id === action.payload ? { ...conv, unreadCount: 0 } : conv
         ),
       };
+    // --Actualizar estado del mensaje--
+    // Cambia el estado de un mensaje (enviando, enviado, entregado, leído)
     case 'UPDATE_MESSAGE_STATUS':
       const { conversationId: updateConvId, messageId, status } = action.payload;
       return {
@@ -112,10 +142,15 @@ const chatReducer = (state, action) => {
   }
 };
 
+// --Proveedor del contexto--
+// Componente que envuelve la aplicación y proporciona el contexto del chat
 export const ChatProvider = ({ children }) => {
+  // --Estado y dispatch--
+  // Hook useReducer para manejar el estado del chat
   const [state, dispatch] = useReducer(chatReducer, initialState);
 
-  // Simular datos iniciales
+  // --Efecto de datos iniciales--
+  // Simula conversaciones de ejemplo al cargar la aplicación
   useEffect(() => {
     const mockConversations = [
       {
@@ -209,9 +244,14 @@ export const ChatProvider = ({ children }) => {
     dispatch({ type: 'SET_CONVERSATIONS', payload: mockConversations });
   }, []);
 
+  // --Valor del contexto--
+  // Objeto que contiene el estado y las funciones del chat
   const value = {
     ...state,
     dispatch,
+    
+    // --Enviar mensaje--
+    // Función para enviar un nuevo mensaje de texto o audio
     sendMessage: (conversationId, text, audioUri) => {
       const message = {
         id: Date.now(),
@@ -234,19 +274,33 @@ export const ChatProvider = ({ children }) => {
         });
       }, 1000);
     },
+    
+    // --Marcar como leído--
+    // Función para marcar una conversación como leída
     markAsRead: (conversationId) => {
       dispatch({ type: 'MARK_CONVERSATION_READ', payload: conversationId });
     },
+    
+    // --Establecer conversación activa--
+    // Función para cambiar la conversación activa
     setActiveConversation: (conversation) => {
       dispatch({ type: 'SET_ACTIVE_CONVERSATION', payload: conversation });
     },
+    
+    // --Iniciar escritura--
+    // Función para indicar que se está escribiendo
     startTyping: () => dispatch({ type: 'SET_TYPING', payload: true }),
+    
+    // --Detener escritura--
+    // Función para indicar que se dejó de escribir
     stopTyping: () => dispatch({ type: 'SET_TYPING', payload: false }),
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 };
 
+// --Hook personalizado--
+// Hook para usar el contexto del chat en otros componentes
 export const useChat = () => {
   const context = useContext(ChatContext);
   if (!context) {

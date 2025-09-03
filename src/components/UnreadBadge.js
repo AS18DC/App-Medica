@@ -1,7 +1,11 @@
+// --Imports de React Native--
+// Importa las funcionalidades básicas de React y React Native
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
 const UnreadBadge = ({ count, style }) => {
+  // --Validación de conteo--
+  // No muestra el badge si no hay mensajes sin leer
   if (count === 0) return null;
 
   return (
@@ -14,6 +18,8 @@ const UnreadBadge = ({ count, style }) => {
 };
 
 const styles = StyleSheet.create({
+  // --Badge de mensajes no leídos--
+  // Badge circular rojo que muestra el número de mensajes sin leer
   badge: {
     position: 'absolute',
     top: -2,
@@ -26,6 +32,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 4,
   },
+  
+  // --Texto del badge--
+  // Estilo para el número de mensajes no leídos
   text: {
     color: '#FFFFFF',
     fontSize: 12,

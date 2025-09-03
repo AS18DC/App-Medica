@@ -1,7 +1,13 @@
+// --Imports de React--
+// Importa las funcionalidades básicas de React para crear contexto y manejar estado
 import React, { createContext, useContext, useState } from 'react';
 
+// --Contexto del doctor--
+// Contexto principal para manejar el estado del doctor en toda la aplicación
 const DoctorContext = createContext();
 
+// --Hook personalizado--
+// Hook para usar el contexto del doctor en otros componentes
 export const useDoctor = () => {
   const context = useContext(DoctorContext);
   if (!context) {
@@ -10,8 +16,11 @@ export const useDoctor = () => {
   return context;
 };
 
+// --Proveedor del contexto--
+// Componente que envuelve la aplicación y proporciona el contexto del doctor
 export const DoctorProvider = ({ children }) => {
-  // Shared state for patients
+  // --Estado de pacientes--
+  // Lista de pacientes asignados al doctor
   const [patients, setPatients] = useState([
     {
       id: 1,
@@ -67,7 +76,8 @@ export const DoctorProvider = ({ children }) => {
     },
   ]);
 
-  // Shared state for pending requests
+  // --Estado de solicitudes pendientes--
+  // Lista de solicitudes de consulta pendientes de aprobación
   const [pendingRequests, setPendingRequests] = useState([
     {
       id: 1,
@@ -123,7 +133,8 @@ export const DoctorProvider = ({ children }) => {
     },
   ]);
 
-  // Shared state for upcoming appointments
+  // --Estado de citas próximas--
+  // Lista de citas programadas en el futuro
   const [upcomingAppointments, setUpcomingAppointments] = useState([
     {
       id: 1,
@@ -179,22 +190,23 @@ export const DoctorProvider = ({ children }) => {
     },
   ]);
 
-  // Shared state for calendar availability
+  // --Estado de disponibilidad del calendario--
+  // Horarios disponibles del doctor para cada día
   const [availability, setAvailability] = useState(() => {
-    // Initialize weekdays as available (Monday-Friday) from 7 AM to 5 PM
+    // Inicializar días laborables como disponibles (Lunes-Viernes) de 7 AM a 5 PM
     const initialAvailability = {};
     const today = new Date();
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
     
-    // Set availability for current month weekdays
+    // Establecer disponibilidad para días laborables del mes actual
     for (let day = 1; day <= 31; day++) {
       const date = new Date(currentYear, currentMonth, day);
-      const isWeekend = date.getDay() === 0 || date.getDay() === 6; // Sunday or Saturday
+      const isWeekend = date.getDay() === 0 || date.getDay() === 6; // Domingo o Sábado
       
       if (!isWeekend && date.getMonth() === currentMonth) {
         const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-        // Set default availability hours for weekdays (7 AM to 5 PM)
+        // Establecer horas de disponibilidad por defecto para días laborables (7 AM a 5 PM)
         initialAvailability[dateKey] = [
           { id: 1, time: '7:00 AM', isAvailable: true },
           { id: 2, time: '7:30 AM', isAvailable: true },
@@ -224,15 +236,17 @@ export const DoctorProvider = ({ children }) => {
     return initialAvailability;
   });
   
+  // --Estado de citas del calendario--
+  // Citas programadas organizadas por fecha
   const [appointments, setAppointments] = useState(() => {
-    // Initialize with some sample appointments
+    // Inicializar con algunas citas de ejemplo
     const today = new Date();
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
     
     const sampleAppointments = {};
     
-    // Add a sample appointment for today
+    // Agregar una cita de ejemplo para hoy
     const todayKey = `${currentYear}-${currentMonth}-${today.getDate()}`;
     sampleAppointments[todayKey] = [
       {
@@ -246,7 +260,7 @@ export const DoctorProvider = ({ children }) => {
       }
     ];
     
-    // Add a sample appointment for tomorrow
+    // Agregar una cita de ejemplo para mañana
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowKey = `${tomorrow.getFullYear()}-${tomorrow.getMonth()}-${tomorrow.getDate()}`;
@@ -265,38 +279,46 @@ export const DoctorProvider = ({ children }) => {
     return sampleAppointments;
   });
 
-  // Functions to manage patients
+  // --Funciones para manejar pacientes--
+  // Añadir un nuevo paciente a la lista
   const addPatient = (patient) => {
     setPatients(prev => [...prev, { ...patient, id: Date.now() }]);
   };
 
+  // Actualizar información de un paciente existente
   const updatePatient = (id, updates) => {
     setPatients(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
   };
 
+  // Eliminar un paciente de la lista
   const removePatient = (id) => {
     setPatients(prev => prev.filter(p => p.id !== id));
   };
 
-  // Functions to manage pending requests
+  // --Funciones para manejar solicitudes pendientes--
+  // Añadir una nueva solicitud pendiente
   const addPendingRequest = (request) => {
     setPendingRequests(prev => [...prev, { ...request, id: Date.now() }]);
   };
 
+  // Eliminar una solicitud pendiente
   const removePendingRequest = (id) => {
     setPendingRequests(prev => prev.filter(r => r.id !== id));
   };
 
-  // Functions to manage upcoming appointments
+  // --Funciones para manejar citas próximas--
+  // Añadir una nueva cita próxima
   const addUpcomingAppointment = (appointment) => {
     setUpcomingAppointments(prev => [{ ...appointment, id: Date.now() }, ...prev]);
   };
 
+  // Eliminar una cita próxima
   const removeUpcomingAppointment = (id) => {
     setUpcomingAppointments(prev => prev.filter(a => a.id !== id));
   };
 
-  // Functions to manage calendar
+  // --Funciones para manejar el calendario--
+  // Actualizar disponibilidad para una fecha específica
   const updateAvailability = (dateKey, hours) => {
     setAvailability(prev => ({
       ...prev,
@@ -304,6 +326,7 @@ export const DoctorProvider = ({ children }) => {
     }));
   };
 
+  // Actualizar citas para una fecha específica
   const updateAppointments = (dateKey, dayAppointments) => {
     setAppointments(prev => ({
       ...prev,
@@ -311,28 +334,30 @@ export const DoctorProvider = ({ children }) => {
     }));
   };
 
+  // --Valor del contexto--
+  // Objeto que contiene el estado y las funciones del doctor
   const value = {
-    // State
+    // Estado
     patients,
     pendingRequests,
     upcomingAppointments,
     availability,
     appointments,
     
-    // Patient functions
+    // Funciones de pacientes
     addPatient,
     updatePatient,
     removePatient,
     
-    // Request functions
+    // Funciones de solicitudes
     addPendingRequest,
     removePendingRequest,
     
-    // Appointment functions
+    // Funciones de citas
     addUpcomingAppointment,
     removeUpcomingAppointment,
     
-    // Calendar functions
+    // Funciones del calendario
     updateAvailability,
     updateAppointments,
   };

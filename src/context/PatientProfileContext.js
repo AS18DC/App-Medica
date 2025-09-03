@@ -1,7 +1,13 @@
+// --Imports de React--
+// Importa las funcionalidades básicas de React para crear contexto y manejar estado
 import React, { createContext, useContext, useState } from 'react';
 
+// --Contexto del perfil del paciente--
+// Contexto principal para manejar el perfil del paciente en toda la aplicación
 const PatientProfileContext = createContext();
 
+// --Hook personalizado--
+// Hook para usar el contexto del perfil del paciente en otros componentes
 export const usePatientProfile = () => {
   const context = useContext(PatientProfileContext);
   if (!context) {
@@ -10,8 +16,11 @@ export const usePatientProfile = () => {
   return context;
 };
 
+// --Proveedor del contexto--
+// Componente que envuelve la aplicación y proporciona el contexto del perfil del paciente
 export const PatientProfileProvider = ({ children }) => {
-  // Datos por defecto del usuario
+  // --Datos por defecto del usuario--
+  // Perfil inicial del paciente con información básica
   const [patientProfile, setPatientProfile] = useState({
     name: "Maria González",
     email: "maria.gonzalez@email.com",
@@ -29,7 +38,8 @@ export const PatientProfileProvider = ({ children }) => {
     disability: []
   });
 
-  // Función para actualizar un campo específico del perfil
+  // --Función para actualizar un campo específico--
+  // Actualiza un campo específico del perfil del paciente
   const updateProfileField = (field, value) => {
     // Convertir fechas a string ISO para evitar problemas de serialización
     let finalValue = value;
@@ -43,7 +53,8 @@ export const PatientProfileProvider = ({ children }) => {
     }));
   };
 
-  // Función para actualizar múltiples campos del perfil
+  // --Función para actualizar múltiples campos--
+  // Actualiza varios campos del perfil del paciente a la vez
   const updateProfileFields = (updates) => {
     // Convertir fechas a string ISO para evitar problemas de serialización
     const processedUpdates = {};
@@ -61,7 +72,8 @@ export const PatientProfileProvider = ({ children }) => {
     }));
   };
 
-  // Función para resetear el perfil a los valores por defecto
+  // --Función para resetear el perfil--
+  // Restaura el perfil a los valores por defecto
   const resetProfile = () => {
     setPatientProfile({
       name: "Maria González",
@@ -80,6 +92,8 @@ export const PatientProfileProvider = ({ children }) => {
     });
   };
 
+  // --Valor del contexto--
+  // Objeto que contiene el estado y las funciones del perfil del paciente
   const value = {
     patientProfile,
     updateProfileField,

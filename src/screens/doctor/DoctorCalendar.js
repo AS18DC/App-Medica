@@ -1,4 +1,9 @@
+// --Imports de React--
+// Importa las funcionalidades básicas de React y hooks de estado y efectos
 import React, { useState, useEffect } from 'react';
+
+// --Imports de React Native--
+// Importa componentes básicos de React Native para la interfaz
 import {
   View,
   Text,
@@ -7,17 +12,30 @@ import {
   TouchableOpacity,
   SafeAreaView,
 } from 'react-native';
+
+// --Imports de iconos--
+// Importa iconos de Ionicons para la interfaz de usuario
 import { Ionicons } from '@expo/vector-icons';
+
+// --Imports de utilidades responsivas--
+// Importa funciones para hacer la interfaz responsiva en diferentes dispositivos
 import { isWeb, webStyles, getResponsiveSpacing, getResponsiveFontSize, getResponsivePadding } from '../../utils/responsive';
+
+// --Imports de contexto--
+// Importa el contexto del doctor para acceder a disponibilidad y citas
 import { useDoctor } from '../../context/DoctorContext';
 
 const DoctorCalendar = ({ navigation }) => {
+  // --Estado del mes actual--
+  // Almacena el mes que se está visualizando en el calendario
   const [currentMonth, setCurrentMonth] = useState(new Date());
   
-  // Use shared context
+  // --Contexto del doctor--
+  // Obtiene la disponibilidad, citas y funciones del contexto del doctor
   const { availability, appointments, updateAvailability } = useDoctor();
 
-  // Generate calendar data for current month
+  // --Función de generación de datos del calendario--
+  // Genera la estructura de datos del calendario para el mes especificado
   const generateCalendarData = (date) => {
     const monthData = {
       year: date.getFullYear(),
@@ -26,54 +44,54 @@ const DoctorCalendar = ({ navigation }) => {
       weeks: [],
     };
 
-    // Get first day of month and number of days
+    // Obtener el primer día del mes y el número de días
     const firstDay = new Date(monthData.year, monthData.month, 1);
     const lastDay = new Date(monthData.year, monthData.month + 1, 0);
     const daysInMonth = lastDay.getDate();
-    const startDay = firstDay.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const startDay = firstDay.getDay(); // 0 = Domingo, 1 = Lunes, etc.
 
-    // Adjust start day to Monday = 0
+    // Ajustar día de inicio para que Lunes = 0
     const adjustedStartDay = startDay === 0 ? 6 : startDay - 1;
 
-    // Generate weeks
+    // Generar semanas
     let currentWeek = [];
     let dayCount = 1;
 
-    // Add empty cells for days before the month starts
+    // Agregar celdas vacías para días antes de que comience el mes
     for (let j = 0; j < adjustedStartDay; j++) {
       currentWeek.push(null);
     }
 
-    // Add days of the month
+    // Agregar días del mes
     for (let j = 1; j <= daysInMonth; j++) {
       const currentDate = new Date(monthData.year, monthData.month, j);
       const today = new Date();
       const isPast = currentDate < new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const isWeekend = currentDate.getDay() === 0 || currentDate.getDay() === 6; // Sunday or Saturday
+      const isWeekend = currentDate.getDay() === 0 || currentDate.getDay() === 6; // Domingo o Sábado
       
       const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`;
       const dayAppointments = appointments[dateKey] || [];
       const dayAvailability = availability[dateKey] || [];
       
-      // Determine day status based on new requirements
+      // Determinar estado del día basado en nuevos requerimientos
       let dayStatus = 'normal';
       if (isPast) {
         dayStatus = 'past';
       } else {
-        // For both weekdays and weekends
+        // Para días laborables y fines de semana
         if (dayAvailability.length === 0) {
-          // No hours available
+          // No hay horas disponibles
           if (dayAppointments.length === 0) {
-            dayStatus = 'unavailable'; // No hours available, no patients
+            dayStatus = 'unavailable'; // No hay horas disponibles, no hay pacientes
           } else {
-            dayStatus = 'full'; // No hours available, but has patients
+            dayStatus = 'full'; // No hay horas disponibles, pero hay pacientes
           }
         } else {
-          // Has hours available
+          // Hay horas disponibles
           if (dayAppointments.length === 0) {
-            dayStatus = 'available'; // Has hours available, no patients
+            dayStatus = 'available'; // Hay horas disponibles, no hay pacientes
           } else {
-            dayStatus = 'with-patients'; // Has hours available and has patients
+            dayStatus = 'with-patients'; // Hay horas disponibles y hay pacientes
           }
         }
       }
@@ -94,7 +112,7 @@ const DoctorCalendar = ({ navigation }) => {
       }
     }
 
-    // Add remaining days to complete the last week
+    // Agregar días restantes para completar la última semana
     if (currentWeek.length > 0) {
       while (currentWeek.length < 7) {
         currentWeek.push(null);
@@ -105,31 +123,41 @@ const DoctorCalendar = ({ navigation }) => {
     return monthData;
   };
 
+  // --Estado de datos del calendario--
+  // Almacena los datos generados del calendario para el mes actual
   const [calendarData, setCalendarData] = useState(generateCalendarData(currentMonth));
 
+  // --Efecto de actualización del calendario--
+  // Actualiza los datos del calendario cuando cambia el mes, disponibilidad o citas
   useEffect(() => {
     setCalendarData(generateCalendarData(currentMonth));
   }, [currentMonth, availability, appointments]);
 
+  // --Función de mes anterior--
+  // Navega al mes anterior en el calendario
   const handlePreviousMonth = () => {
     const newMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
     setCurrentMonth(newMonth);
   };
 
+  // --Función de mes siguiente--
+  // Navega al mes siguiente en el calendario
   const handleNextMonth = () => {
     const newMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
     setCurrentMonth(newMonth);
   };
 
+  // --Función de presión de fecha--
+  // Maneja la selección de una fecha en el calendario
   const handleDatePress = (day) => {
     if (!day || day.isPast) return;
 
-    // Navigate directly to day view
+    // Navegar directamente a la vista del día
     navigation.navigate('DoctorDayView', { date: day.date });
   };
 
-
-
+  // --Función de obtención de estilo del día--
+  // Retorna los estilos apropiados para cada tipo de día
   const getDayStyle = (day) => {
     switch (day.dayStatus) {
       case 'past':
@@ -147,6 +175,8 @@ const DoctorCalendar = ({ navigation }) => {
     }
   };
 
+  // --Función de obtención de estilo del texto del día--
+  // Retorna los estilos apropiados para el texto de cada tipo de día
   const getDayTextStyle = (day) => {
     switch (day.dayStatus) {
       case 'past':
@@ -164,9 +194,11 @@ const DoctorCalendar = ({ navigation }) => {
     }
   };
 
+  // --Función de renderizado del calendario--
+  // Renderiza el calendario completo con navegación y cuadrícula
   const renderCalendar = () => (
     <View style={styles.monthContainer}>
-      {/* Month Navigation */}
+      {/* Navegación del mes */}
       <View style={styles.monthNavigation}>
         <TouchableOpacity
           style={styles.navButton}
@@ -187,7 +219,7 @@ const DoctorCalendar = ({ navigation }) => {
         </TouchableOpacity>
       </View>
       
-      {/* Week days header */}
+      {/* Encabezado de días de la semana */}
       <View style={styles.weekDaysHeader}>
         {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((day, index) => (
           <View key={index} style={styles.weekDayHeader}>
@@ -198,7 +230,7 @@ const DoctorCalendar = ({ navigation }) => {
         ))}
       </View>
 
-      {/* Calendar grid */}
+      {/* Cuadrícula del calendario */}
       <View style={styles.calendarGrid}>
         {calendarData.weeks.map((week, weekIndex) => (
           <View key={weekIndex} style={styles.weekRow}>
@@ -214,15 +246,15 @@ const DoctorCalendar = ({ navigation }) => {
                   onPress={() => handleDatePress(day)}
                   disabled={day.isPast}
                 >
-                                     <Text style={[
-                     ...getDayTextStyle(day),
-                     { fontSize: getResponsiveFontSize(14, 15, 16) }
-                   ]}>
-                     {day.day}
-                   </Text>
-                   {day.appointments.length > 0 && (
-                     <View style={styles.appointmentIndicator} />
-                   )}
+                  <Text style={[
+                    ...getDayTextStyle(day),
+                    { fontSize: getResponsiveFontSize(14, 15, 16) }
+                  ]}>
+                    {day.day}
+                  </Text>
+                  {day.appointments.length > 0 && (
+                    <View style={styles.appointmentIndicator} />
+                  )}
                 </TouchableOpacity>
               );
             })}
@@ -260,13 +292,13 @@ const DoctorCalendar = ({ navigation }) => {
           <View style={{paddingVertical: getResponsivePadding(20, 40, 40)}}>
           </View>
 
-          {/* Calendar */}
+          {/* Calendario */}
           <View style={[styles.calendarContainer, { paddingHorizontal: getResponsivePadding(20, 40, 60) }]}>
             {renderCalendar()}
           </View>
 
 
-          {/* Legend */}
+          {/* Leyenda */}
           <View style={[styles.legendContainer, { paddingHorizontal: getResponsivePadding(20, 40, 60) }]}>
             <Text style={[styles.legendTitle, { fontSize: getResponsiveFontSize(16, 17, 18) }]}>
               Leyenda
@@ -310,111 +342,190 @@ const DoctorCalendar = ({ navigation }) => {
    );
 };
 
+// --Estilos del componente--
+// Define todos los estilos visuales del calendario del doctor
 const styles = StyleSheet.create({
+  // --Contenedor principal--
+  // Estilo del contenedor principal de la pantalla
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
+  
+  // --Contenido--
+  // Estilo del contenido principal de la pantalla
   content: {
     flex: 1,
   },
+  
+  // --Encabezado--
+  // Estilo del encabezado de la pantalla
   header: {
     paddingTop: getResponsiveSpacing(20, 30, 40),
     paddingBottom: getResponsiveSpacing(16, 20, 24),
   },
+  
+  // --Parte superior del encabezado--
+  // Estilo de la parte superior del encabezado
   headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  
+  // --Botón de regreso--
+  // Estilo del botón para regresar a la pantalla anterior
   backButton: {
     padding: 8,
   },
+  
+  // --Título principal--
+  // Estilo del título principal de la pantalla
   title: {
     fontWeight: 'bold',
     color: '#1A1A1A',
     flex: 1,
     textAlign: 'center',
   },
+  
+  // --Parte derecha del encabezado--
+  // Estilo de la parte derecha del encabezado
   headerRight: {
     width: 40,
   },
+  
+  // --Vista de desplazamiento--
+  // Estilo de la vista de desplazamiento principal
   scrollView: {
     flex: 1,
   },
+  
+  // --Contenido del desplazamiento--
+  // Estilo del contenido dentro de la vista de desplazamiento
   scrollContent: {
     paddingBottom: getResponsiveSpacing(20, 30, 40),
   },
+  
+  // --Contenedor de leyenda--
+  // Estilo del contenedor que muestra la leyenda del calendario
   legendContainer: {
     marginBottom: getResponsiveSpacing(24, 32, 40),
   },
+  
+  // --Título de la leyenda--
+  // Estilo del título de la sección de leyenda
   legendTitle: {
     fontWeight: 'bold',
     color: '#1A1A1A',
     marginBottom: 12,
   },
+  
+  // --Elementos de la leyenda--
+  // Estilo del contenedor de elementos de la leyenda
   legendItems: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 16,
   },
+  
+  // --Elemento de la leyenda--
+  // Estilo de cada elemento individual de la leyenda
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
+  
+  // --Color de la leyenda--
+  // Estilo del indicador de color en cada elemento de la leyenda
   legendColor: {
     width: 16,
     height: 16,
     borderRadius: 8,
   },
+  
+  // --Texto de la leyenda--
+  // Estilo del texto descriptivo en cada elemento de la leyenda
   legendText: {
     color: '#666',
   },
+  
+  // --Contenedor del calendario--
+  // Estilo del contenedor principal del calendario
   calendarContainer: {
     marginBottom: getResponsiveSpacing(24, 32, 40),
   },
+  
+  // --Contenedor del mes--
+  // Estilo del contenedor de cada mes individual
   monthContainer: {
     marginBottom: getResponsiveSpacing(32, 40, 48),
   },
+  
+  // --Navegación del mes--
+  // Estilo del contenedor de navegación entre meses
   monthNavigation: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
   },
+  
+  // --Botón de navegación--
+  // Estilo de los botones para navegar entre meses
   navButton: {
     padding: 8,
   },
+  
+  // --Título del mes--
+  // Estilo del título que muestra el mes y año actual
   monthTitle: {
     fontWeight: 'bold',
     color: '#1A1A1A',
     textAlign: 'center',
   },
+  
+  // --Encabezado de días de la semana--
+  // Estilo del encabezado que muestra los días de la semana
   weekDaysHeader: {
     flexDirection: 'row',
     marginBottom: 8,
   },
+  
+  // --Encabezado de día de la semana--
+  // Estilo de cada encabezado individual de día de la semana
   weekDayHeader: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 8,
   },
+  
+  // --Texto del día de la semana--
+  // Estilo del texto de cada día de la semana en el encabezado
   weekDayText: {
     fontWeight: '600',
     color: '#666',
   },
+  
+  // --Cuadrícula del calendario--
+  // Estilo de la cuadrícula principal del calendario
   calendarGrid: {
     borderWidth: 1,
     borderColor: '#E0E0E0',
     borderRadius: 8,
     overflow: 'hidden',
   },
+  
+  // --Fila de la semana--
+  // Estilo de cada fila que representa una semana
   weekRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
+  
+  // --Celda del día--
+  // Estilo de cada celda individual que representa un día
   dayCell: {
     flex: 1,
     aspectRatio: 1,
@@ -425,6 +536,9 @@ const styles = StyleSheet.create({
     position: 'relative',
     backgroundColor: '#FFFFFF',
   },
+  
+  // --Día vacío--
+  // Estilo para las celdas vacías al inicio o final del mes
   emptyDay: {
     flex: 1,
     aspectRatio: 1,
@@ -432,48 +546,81 @@ const styles = StyleSheet.create({
     borderRightWidth: 1,
     borderRightColor: '#E0E0E0',
   },
+  
+  // --Día pasado--
+  // Estilo para los días que ya han pasado
   pastDay: {
     backgroundColor: '#F5F5F5',
   },
+  
+  // --Texto del día pasado--
+  // Estilo del texto para los días que ya han pasado
   pastDayText: {
     color: '#CCC',
   },
+  
+  // --Día disponible--
+  // Estilo para los días que están disponibles para citas
   availableDay: {
-    backgroundColor: '#E8F5E8', // Light green
+    backgroundColor: '#E8F5E8', // Verde claro
   },
+  
+  // --Texto del día disponible--
+  // Estilo del texto para los días disponibles
   availableDayText: {
     color: '#2E7D32',
     fontWeight: '600',
   },
+  
+  // --Día con pacientes--
+  // Estilo para los días que tienen pacientes programados
   withPatientsDay: {
-    backgroundColor: '#FFF3E0', // Light orange
+    backgroundColor: '#FFF3E0', // Naranja claro
   },
+  
+  // --Texto del día con pacientes--
+  // Estilo del texto para los días con pacientes
   withPatientsDayText: {
     color: '#E65100',
     fontWeight: '600',
   },
+  
+  // --Día completo--
+  // Estilo para los días que están completamente ocupados
   fullDay: {
-    backgroundColor: '#E1BEE7', // Light purple
+    backgroundColor: '#E1BEE7', // Púrpura claro
   },
+  
+  // --Texto del día completo--
+  // Estilo del texto para los días completamente ocupados
   fullDayText: {
     color: '#4A148C',
     fontWeight: '600',
   },
+  
+  // --Día no disponible--
+  // Estilo para los días que no están disponibles para citas
   unavailableDay: {
-    backgroundColor: '#FFCDD2', // Light red
+    backgroundColor: '#FFCDD2', // Rojo claro
   },
+  
+  // --Texto del día no disponible--
+  // Estilo del texto para los días no disponibles
   unavailableDayText: {
     color: '#C62828',
     fontWeight: '600',
   },
-     appointmentIndicator: {
-     position: 'absolute',
-     bottom: 4,
-     width: 6,
-     height: 6,
-     borderRadius: 3,
-     backgroundColor: '#FFC107',
-   },
+  
+  // --Indicador de cita--
+  // Estilo del indicador visual que muestra cuando hay citas programadas
+  appointmentIndicator: {
+    position: 'absolute',
+    bottom: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FFC107',
+  },
 });
 
 export default DoctorCalendar; 
