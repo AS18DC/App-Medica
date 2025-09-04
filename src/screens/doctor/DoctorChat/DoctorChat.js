@@ -26,7 +26,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 // --Imports de componentes--
 // Importa componentes personalizados para el chat
-import MessageStatus from '../../components/MessageStatus';
+import MessageStatus from '../../../components/MessageStatus';
 
 // --Imports de Expo--
 // Importa funcionalidades de Expo para manejo de archivos y multimedia
@@ -37,7 +37,7 @@ import { Video } from 'expo-video';
 
 // --Imports de utilidades responsivas--
 // Importa funciones para hacer la interfaz responsiva en diferentes dispositivos
-import { isWeb, webStyles, getResponsiveSpacing, getResponsiveFontSize, getResponsivePadding } from '../../utils/responsive';
+import { isWeb, webStyles, getResponsiveSpacing, getResponsiveFontSize, getResponsivePadding } from '../../../utils/responsive';
 
 const DoctorChat = ({ navigation, route }) => {
   // --Estado de adjuntos--
@@ -285,7 +285,7 @@ const DoctorChat = ({ navigation, route }) => {
         style={styles.keyboardAvoidingView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* Header igual al paciente */}
+        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#1A1A1A" />
@@ -309,7 +309,7 @@ const DoctorChat = ({ navigation, route }) => {
           {messages.map(renderMessage)}
         </ScrollView>
 
-        {/* Message Input igual al paciente */}
+        {/* Message Input */}
         <View style={styles.inputContainer}>
           {isAttaching && (
             <View style={styles.attachmentMenuRow}>
