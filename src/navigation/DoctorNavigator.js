@@ -17,7 +17,7 @@ import DoctorDashboard from '../screens/doctor/DoctorDashboard';
 import DoctorPatients from '../screens/doctor/DoctorPatients';
 import DoctorProfile from '../screens/doctor/DoctorProfile';
 import DoctorChat from '../screens/doctor/DoctorChat';
-import DoctorCalendar from '../screens/doctor/DoctorCalendar';
+import DoctorCalendar from '../screens/doctor/DoctorCalendar/DoctorCalendar';
 import DoctorDayView from '../screens/doctor/DoctorDayView';
 import DoctorPrescriptions from '../screens/doctor/DoctorPrescriptions';
 
